@@ -70,6 +70,14 @@ html,body{margin:0;height:100%;background:#050505;color:#fff;overflow:hidden;ove
 .loader{display:none}
 .gate.loading .loader{display:block}
 .gate.loading .gate-title,.gate.loading .gate-sub,.gate.loading .enter,.gate.loading .gate-note{display:none}
+.gate.loading .gate-form{display:none}
+.gate-form{margin-bottom:26px;color:rgba(255,255,255,.7)}
+.gate-lang{display:flex;gap:8px;margin-bottom:16px}
+.gate-lang button{padding:8px 14px;border:1px solid rgba(255,255,255,.3);background:none;color:rgba(255,255,255,.7);cursor:pointer;font:inherit}
+.gate-lang button.on{border-color:var(--accent);color:var(--accent)}
+.gate-form label{display:block}
+.gate-form label span{display:block;margin-bottom:6px}
+.gate-form input{width:min(320px,70vw);padding:10px 12px;border:1px solid rgba(255,255,255,.3);background:#000;color:#fff;font:inherit;text-transform:none}
 .gate-note{margin-top:16px;color:rgba(255,255,255,.4)}
 /* VISITOR MODE: the inventory (left, one row per room), directives (top), the sample viewer */
 .inv{position:absolute;left:22px;top:22px;z-index:10;color:rgba(255,255,255,.6)}
@@ -240,7 +248,11 @@ html,body{margin:0;height:100%;background:#050505;color:#fff;overflow:hidden;ove
 
   <div class="gate" id="gate"><div class="gate-inner">
     <h1 class="gate-title">VISITOR MODE</h1>
-    <div class="gate-sub mono">Flashlight enabled<br>Visitor access 10:00<br>Material inventory 0 / 48<br>Objective: recover all material samples</div>
+    <div class="gate-sub mono" id="gateSub">Flashlight enabled<br>Visitor access 10:00<br>Material inventory 0 / 48<br>Objective: recover all material samples</div>
+    <div class="gate-form mono">
+      <div class="gate-lang"><button type="button" data-lang="de">Deutsch</button><button type="button" data-lang="en">English</button></div>
+      <label><span id="nameLabel">Name</span><input id="visitorName" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
+    </div>
     <div class="loader">
       <div class="bar-label mono"><span id="loadText">Entering room</span><span id="loadPct">0%</span></div>
       <div class="bar-track"><div class="bar" id="loaderBar"></div></div>
@@ -1196,6 +1208,29 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // the language of the visit: English is the source, German is looked up (drafts, to be settled with Iris)
+  const LANG_KEY = 'visitorMode.lang';
+  let LANG = 'de', visitorName = '';
+  try { LANG = localStorage.getItem(LANG_KEY) || 'de'; } catch (err) {}
+  const L = (en, de) => (LANG === 'de' ? de : en);
+  const DE_EXACT = { 'Sample acquired': 'Probe entnommen', 'Sample lost': 'Probe verloren', 'Route collapsed': 'Weg eingestürzt', 'this way is gone': 'dieser Weg besteht nicht mehr',
+    'Structural loss': 'Substanzverlust', 'New directive': 'Neue Anweisung', 'Directive complete': 'Anweisung erfüllt', 'Directive failed': 'Anweisung nicht erfüllt', 'Time expired': 'Zeit abgelaufen',
+    'Signal lost': 'Signal verloren', 'Signal unstable': 'Signal instabil', 'Leave site?': 'Ort verlassen?', 'press Q again': 'Q erneut drücken', 'Visitor access expires': 'Besuchszeit läuft ab',
+    'Locate and recover a material sample': 'Finde und entnimm eine Materialprobe', 'Recover a sample': 'Entnimm eine Probe', 'Access expired': 'Besuchszeit abgelaufen', 'Site lost': 'Ort verloren',
+    'No material left to recover': 'Kein Material mehr vorhanden', 'Visit ended': 'Besuch beendet', 'Found: floor': 'Fundort: Boden', 'conserved in resin': 'in Harz konserviert', original: 'Original',
+    'conserving …': 'wird konserviert …', 'SITE CONDITION: ': 'ZUSTAND: ', 'SITE LOST': 'ORT VERLOREN', STABLE: 'STABIL', UNSTABLE: 'INSTABIL', FRAGMENTED: 'FRAGMENTIERT', CRITICAL: 'KRITISCH', LOST: 'VERLOREN' };
+  const DE_RULES = [[/^SAMPLE /, 'PROBE '], [/^Sample (\S+) \/ (\S+): signal unstable — recover it$/, 'Probe $1 / $2: Signal instabil, jetzt bergen'], [/^sample (\S+) \/ (\S+) — recover it$/, 'Probe $1 / $2 bergen'],
+    [/^Room (\S+) documented$/, 'Raum $1 dokumentiert'], [/^(\d+) \/ (\d+) samples$/, '$1 / $2 Proben'], [/^(\d+) samples conserved$/, '$1 Proben konserviert'], [/^material inventory /, 'Materialinventar '],
+    [/^Recover a sample from (.+)$/, 'Entnimm eine Probe aus $1'], [/^Recover (\d+) samples from (.+)$/, 'Entnimm $1 Proben aus $2'], [/^Recover (\d+) samples$/, 'Entnimm $1 Proben'], [/^Survey (\S+): illuminate the room$/, 'Untersuche $1: leuchte den Raum aus'],
+    [/^Complete room (.+)$/, 'Schließe Raum $1 ab'], [/^Room (\S+) can no longer be completed$/, 'Raum $1 kann nicht mehr abgeschlossen werden'], [/^site remaining /, 'verbleibend '],
+    [/^Found: surface, /, 'Fundort: Oberfläche, '], [/^Site condition: (\S+)$/, (m, c) => 'Zustand: ' + (DE_EXACT[c] || c)],
+    [/Iron nail, bent/, 'Eisennagel, verbogen'], [/Iron nail/, 'Eisennagel'], [/Tile fragment/, 'Fliesenbruchstück'], [/Debris/, 'Schutt'], [/Crown cap/, 'Kronkorken'], [/Wallpaper fragment/, 'Tapetenstück']];
+  function tr(s) {
+    if (LANG !== 'de' || !s) return s;
+    if (DE_EXACT[s]) return DE_EXACT[s];
+    for (const [a, b] of DE_RULES) s = s.replace(a, b);
+    return s;
+  }
   const canvas = $('#viewer');
   const gate = $('#gate');
   const bar = $('#loaderBar');
@@ -1211,7 +1246,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // After the click the loading bar runs (like on the website): it follows the
   // real progress but takes at least ~1.6 s, then the room fades in.
   let loaded = 0, ready = false, failed = false, entered = false;
-  function progress(v) { loaded = clamp(v, 0, 1); if (enterBtn.disabled) enterBtn.textContent = 'Loading ' + Math.round(loaded * 100) + ' %'; }
+  function progress(v) { loaded = clamp(v, 0, 1); if (enterBtn.disabled) enterBtn.textContent = L('Loading ', 'Lädt ') + Math.round(loaded * 100) + ' %'; }
   function fail(msg, err) {
     if (err) console.error(err);
     failed = true;
@@ -1222,14 +1257,26 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   enterBtn.focus({ preventScroll: true });
   // Quest: the click on ENTER itself must open VR, so it waits until the house has loaded
   const XRSIM = /[?&]xrsim\b/.test(location.search);
-  const enterLabel = enterBtn.textContent;
+  const enterLabel = () => L('▶ Enter site', '▶ Eintreten');
+  const nameInput = $('#visitorName');
+  nameInput.addEventListener('keydown', (e) => e.stopPropagation()); // typing a name is not walking
+  function applyLang(lang) {
+    LANG = lang; try { localStorage.setItem(LANG_KEY, lang); } catch (err) {}
+    document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang));
+    $('#gateSub').innerHTML = L('Flashlight enabled<br>Visitor access 10:00<br>Material inventory 0 / 48<br>Objective: recover all material samples', 'Taschenlampe aktiv<br>Besuchszeit 10:00<br>Materialinventar 0 / 48<br>Ziel: alle Materialproben bergen');
+    $('#nameLabel').textContent = L('Visitor name (optional)', 'Name (freiwillig)');
+    if (!enterBtn.disabled) enterBtn.textContent = enterLabel();
+  }
+  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => applyLang(b.dataset.lang)));
   let xrOK = false, xrActive = false;
   const questMode = () => xrOK || XRSIM;
-  function enterReady() { enterBtn.disabled = false; enterBtn.textContent = enterLabel; }
+  function enterReady() { enterBtn.disabled = false; enterBtn.textContent = enterLabel(); }
   const xrCheck = navigator.xr && !XRSIM ? navigator.xr.isSessionSupported('immersive-vr').catch(() => false) : Promise.resolve(false);
   if (navigator.xr && !XRSIM) enterBtn.disabled = true;
+  applyLang(LANG);
   xrCheck.then((yes) => { xrOK = yes; if (!yes) enterReady(); });
   enterBtn.addEventListener('click', () => {
+    visitorName = nameInput.value.trim().slice(0, 24);
     if (questMode()) xrStart();
     // sound must start inside the click (browser rule); it fades in slowly
     if (window.RoomSound) RoomSound.enable();
@@ -2197,7 +2244,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const XR_AMBIENT = 0.75; // how much of the room shows outside the lamp (fixed, Iris: step 4 of the 5 tried)
   const INVENTORY_AFTER_TAKE = 6, INVENTORY_REMIND = 90, INVENTORY_REMIND_SHOW = 6; // seconds
   const WALK_DEAD = 0.15, TURN_DEAD = 0.2, TURN_SPEED = 1.0; // radians per second at full push
-  const BTN_TRIGGER = 0, BTN_INVENTORY = 4;
+  const BTN_TRIGGER = 0, BTN_INVENTORY = 4, BTN_LEAVE = 5;
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
   const INSPECT_DISTANCE = 0.5, INSPECT_DROP = 0.05, INSPECT_SCALE = 1.5;
   const XR_SETTLE_FRAMES = 30;
@@ -2207,8 +2254,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const xrUp = new THREE.Vector3(0, 1, 0), xrOffset = new THREE.Vector3(), xrFlat = new THREE.Vector3();
 
   const xrHud = (() => {
-    let root = null, bannerP, inventoryP, inspectP, dot, hint, corner, cornerText = '', nearSample = null, showInventory = false, endedLines = null;
-    let frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', peekT = 0, plan = null;
+    let guideP, guidePage = -1, root = null, bannerP, inventoryP, inspectP, dot, hint, corner, cornerText = '', nearSample = null, showInventory = false, endedLines = null;
+    let endedRegister = [], frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', peekT = 0, plan = null;
     function panel(w, h, metres) {
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
@@ -2217,13 +2264,46 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       mesh.renderOrder = 1000; mesh.visible = false;
       return { mesh, tex, g: c.getContext('2d'), w, h };
     }
-    function drawHand(g, cx, cy) { // an open hand, plain white
-      g.save(); g.fillStyle = '#fff'; g.shadowColor = '#000'; g.shadowBlur = 10; g.translate(cx, cy);
-      const bar = (x, y, w, h) => { g.beginPath(); g.roundRect(x, y, w, h, w / 2); g.fill(); };
-      bar(-26, -14, 58, 62);
-      [[-26, -46], [-11, -60], [4, -56], [19, -44]].forEach(([x, top]) => bar(x, top, 13, 50 - top - 14 + 8));
-      g.save(); g.translate(32, 14); g.rotate(0.75); bar(-6, -46, 13, 52); g.restore();
-      g.restore();
+    // a plain outline of a hand (icon "hand" of the free icon set Lucide, ISC licence)
+    const HAND_PATHS = ['M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2', 'M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2', 'M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8',
+      'M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'].map((d) => new Path2D(d));
+    function drawHand(g, x, y, size) {
+      const k = size / 24; g.save(); g.translate(x, y); g.scale(k, k);
+      g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.lineCap = 'round'; g.lineJoin = 'round'; g.shadowColor = '#000'; g.shadowBlur = 8;
+      HAND_PATHS.forEach((q) => g.stroke(q)); g.restore();
+    }
+    // the short guide at the beginning: one page at a time, the visit starts after the last
+    const GUIDE = () => [
+      { title: L('Adjust the headset', 'Brille einstellen'), lines: L(
+        ['Tighten the strap at the back of your head until the headset sits still.', 'Image blurry? Move the headset slightly up or down.', 'Eye distance: slide the lenses sideways with two fingers, there are three positions.', 'Put the controller in your hand with the loop around your wrist.'],
+        ['Zieh den Riemen am Hinterkopf fest, bis die Brille ruhig sitzt.', 'Bild unscharf? Schieb die Brille etwas nach oben oder unten.', 'Augenabstand: Schieb die Linsen mit zwei Fingern seitlich, es gibt drei Stellungen.', 'Nimm den Controller in die Hand, die Schlaufe ums Handgelenk.']) },
+      { title: L('Moving', 'Bewegen'), lines: L(
+        ['Look around with your head. The lamp follows your gaze.', 'Stick forward or back: walk in the direction you are looking.', 'Stick left or right: turn.', 'Walls and objects are solid. You pass between rooms only through the veils of dust in the doors.', 'Outside, a trail of dust on the ground leads to the wine cellar.'],
+        ['Schau dich mit dem Kopf um. Die Lampe folgt deinem Blick.', 'Stick nach vorne oder hinten: gehen, dorthin, wohin du schaust.', 'Stick nach links oder rechts: drehen.', 'Wände und Gegenstände sind fest. In andere Räume kommst du nur durch die Schleier aus Staub in den Türen.', 'Draußen führt eine Spur aus Staub am Boden zum Weinkeller.']) },
+      { title: L('Taking samples', 'Proben entnehmen'), hand: true, lines: L(
+        ['Samples are marked in orange and can only be seen from close by.', 'Look straight at a sample. When the hand appears, press the trigger with your index finger.', 'The sample goes into your inventory.', 'A or X: open or close the inventory.'],
+        ['Proben sind orange markiert und erst aus der Nähe zu sehen.', 'Schau direkt auf eine Probe. Erscheint die Hand, drück den Abzug mit dem Zeigefinger.', 'Die Probe kommt in dein Inventar.', 'A oder X: Inventar öffnen oder schließen.']) },
+      { title: L('Your visit', 'Dein Besuch'), lines: L(
+        ['Your access lasts 10 minutes.', 'Objective: recover material samples.', 'Time and samples are shown small at the top left.', 'When the time is up, you see the floor plan from above.'],
+        ['Dein Zugang dauert 10 Minuten.', 'Ziel: Materialproben entnehmen.', 'Zeit und Proben stehen klein oben links.', 'Wenn die Zeit um ist, siehst du den Grundriss von oben.']) },
+    ];
+    function drawGuide() {
+      const pages = GUIDE(), page = pages[guidePage], { g, w, h } = guideP;
+      g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(5,5,5,.9)'; g.fillRect(0, 0, w, h);
+      g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = 'bold 56px Arial'; g.fillText(page.title.toUpperCase(), 56, 96);
+      if (page.hand) drawHand(g, w - 170, 36, 110);
+      g.font = '36px Arial'; let y = 180;
+      for (const line of page.lines) { // wrapped to the panel
+        let row = '';
+        for (const word of line.split(' ')) {
+          if (g.measureText(row + word).width > w - 112) { g.fillText(row, 56, y); y += 48; row = ''; }
+          row += word + ' ';
+        }
+        g.fillText(row, 56, y); y += 70;
+      }
+      g.fillStyle = '#e1681c'; g.font = '32px "Courier New",monospace';
+      g.fillText(`${guidePage + 1} / ${pages.length}   ` + (guidePage === pages.length - 1 ? L('TRIGGER: BEGIN VISIT', 'ABZUG: BESUCH BEGINNEN') : L('TRIGGER: CONTINUE', 'ABZUG: WEITER')), 56, h - 44);
+      guideP.tex.needsUpdate = true;
     }
     function drawBanner(title, sub, warn) {
       const { g, w, h } = bannerP;
@@ -2239,11 +2319,18 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(5,5,5,.82)'; g.fillRect(0, 0, w, h);
       g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '38px "Courier New",monospace';
       if (endedLines) {
-        endedLines.forEach((line, i) => { g.fillStyle = i === 0 ? '#e1681c' : '#fff'; g.font = i === 0 ? 'bold 60px Arial' : '36px "Courier New",monospace'; g.fillText(line.toUpperCase(), 48, 90 + i * 76); });
+        let y = 76;
+        endedLines.forEach((line, i) => { g.fillStyle = i === 0 ? '#e1681c' : '#fff'; g.font = i === 0 ? 'bold 54px Arial' : '30px "Courier New",monospace'; g.fillText(line.toUpperCase(), 40, y, w - 80); y += i === 0 ? 62 : 44; });
+        y += 24; g.fillStyle = 'rgba(255,255,255,.6)'; g.font = '26px "Courier New",monospace';
+        g.fillText(L('VISITOR REGISTER', 'BESUCHSREGISTER'), 40, y); g.fillText(L('SAMPLES', 'PROBEN'), 490, y); g.fillText(L('SITE', 'ORT'), 660, y); y += 42;
+        endedRegister.forEach((r) => {
+          g.fillStyle = r.me ? '#e1681c' : '#fff'; g.font = '30px "Courier New",monospace';
+          g.fillText(`${r.rank}. ${r.name}`, 40, y, 430); g.fillText(`${r.got}`, 490, y); g.fillText(`${r.rem} %`, 660, y); y += 40;
+        });
         inventoryP.tex.needsUpdate = true; return;
       }
-      g.fillText('VISITOR ACCESS ' + $('#accessT').textContent, 48, 66);
-      g.fillText('MATERIAL INVENTORY ' + $('#invCount').textContent, 48, 116);
+      g.fillText(L('VISITOR ACCESS ', 'BESUCHSZEIT ') + $('#accessT').textContent, 48, 66);
+      g.fillText(L('MATERIAL INVENTORY ', 'MATERIALINVENTAR ') + $('#invCount').textContent, 48, 116);
       const SW = 118, SH = 34, top = 160, step = 50;
       (visitor ? visitor.ROOMS : []).forEach((R, row) => {
         const y = top + row * step;
@@ -2262,22 +2349,22 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       });
       const foot = top + 12 * step + 34;
       g.fillStyle = '#fff'; g.font = '34px "Courier New",monospace';
-      g.fillText($('#siteLabel').textContent + $('#siteCond').textContent, 48, foot);
-      g.fillText('SITE REMAINING ' + $('#siteRem').textContent, 48, foot + 46);
-      if (visitor && visitor.latest) { g.fillStyle = '#e1681c'; g.font = '30px "Courier New",monospace'; g.fillText(visitor.latestText.toUpperCase(), 48, foot + 92); }
+      g.fillText(tr($('#siteLabel').textContent) + tr($('#siteCond').textContent), 48, foot);
+      g.fillText(L('SITE REMAINING ', 'VERBLEIBEND ') + $('#siteRem').textContent, 48, foot + 46);
+      if (visitor && visitor.latest) { g.fillStyle = '#e1681c'; g.font = '30px "Courier New",monospace'; g.fillText(tr(visitor.latestText).toUpperCase(), 48, foot + 92); }
       g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '26px Arial';
-      g.fillText(`${fps} Bilder/s · Inventar (A/X)`, 48, h - 24);
+      g.fillText(`${fps} ${L('frames/s', 'Bilder/s')} · ${L('Inventory', 'Inventar')} (A/X)`, 48, h - 24);
       inventoryP.tex.needsUpdate = true;
     }
     function drawInspect() {
-      const lines = ['#iId', '#iName', '#iFound', '#iCond'].map((q) => $(q).textContent);
+      const lines = ['#iId', '#iName', '#iFound', '#iCond'].map((q) => tr($(q).textContent));
       const key = lines.join('|'); if (key === inspectKey) return; inspectKey = key;
       const { g, w, h } = inspectP;
       g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(5,5,5,.78)'; g.fillRect(0, 0, w, h);
       g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '30px "Courier New",monospace'; g.fillText(lines[0], 30, 56);
       g.fillStyle = '#fff'; g.font = 'bold 44px Arial'; g.fillText(lines[1].toUpperCase(), 30, 122);
       g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '30px "Courier New",monospace'; g.fillText(lines[2].toUpperCase(), 30, 182);
-      g.fillStyle = '#e1681c'; g.fillText('CONDITION: ' + lines[3].toUpperCase(), 30, 232);
+      g.fillStyle = '#e1681c'; g.fillText(L('CONDITION: ', 'ZUSTAND: ') + lines[3].toUpperCase(), 30, 232);
       inspectP.tex.needsUpdate = true;
     }
     function drawEndPlan() {
@@ -2294,9 +2381,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         uniforms: { map: { value: rt.texture } }, depthTest: false, depthWrite: false,
         vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
         fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(map, vUv).rgb, 1.0); }' }));
-      mesh.renderOrder = 999; mesh.position.set(-0.45, 0, 0); root.add(mesh);
-      xrFlat.set(viewDir.x, 0, viewDir.z).normalize();
-      root.position.copy(viewPos).addScaledVector(xrFlat, END_PLAN_DISTANCE); root.lookAt(viewPos);
+      mesh.renderOrder = 999; mesh.position.set(-0.45, 0, 0); root.add(mesh); plan.mesh = mesh; plan.rt = rt;
+      root.position.copy(viewPos).addScaledVector(viewDir, END_PLAN_DISTANCE); root.lookAt(viewPos); // where the visitor is looking
       inventoryP.mesh.position.set(0.68, 0, 0); inventoryP.mesh.visible = true; inspectP.mesh.visible = false; bannerP.mesh.visible = false;
       dot.visible = false; hint.mesh.visible = false; corner.mesh.visible = false;
     }
@@ -2310,15 +2396,16 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         dot.position.set(0, 0, -1.5); dot.renderOrder = 1000; camera.add(dot);
         // above the sample in reach: a hand and what to do
         hint = panel(640, 180, 0.4); scene.add(hint.mesh);
-        drawHand(hint.g, 92, 92);
+        drawHand(hint.g, 28, 26, 128);
         hint.g.textAlign = 'left'; hint.g.shadowColor = '#000'; hint.g.shadowBlur = 10; hint.g.fillStyle = '#fff';
-        hint.g.font = 'bold 44px Arial'; hint.g.fillText('TAKE SAMPLE', 180, 82);
-        hint.g.font = '32px "Courier New",monospace'; hint.g.fillText('PRESS TRIGGER', 180, 128); hint.tex.needsUpdate = true;
+        hint.g.font = 'bold 44px Arial'; hint.g.fillText(L('TAKE SAMPLE', 'PROBE ENTNEHMEN'), 180, 82, 450);
+        hint.g.font = '32px "Courier New",monospace'; hint.g.fillText(L('PRESS TRIGGER', 'ABZUG DRÜCKEN'), 180, 128, 450); hint.tex.needsUpdate = true;
         // the time and the count, small, in a corner of the view
+        guideP = panel(1000, 800, 0.95); root.add(guideP.mesh); this.guideStart();
         corner = panel(420, 64, CORNER_WIDTH); corner.mesh.position.set(CORNER_X, CORNER_Y, -1.5); camera.add(corner.mesh);
       },
       banner(title, sub, warn) {
-        if (!bannerP) return;
+        if (!bannerP || plan) return;
         if (title == null) { bannerP.mesh.visible = false; return; }
         drawBanner(title, sub, warn);
       },
@@ -2327,7 +2414,18 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       near(s) { if (!dot) return; nearSample = s; dot.material.color.setHex(s ? 0xe1681c : 0xffffff); dot.material.opacity = s ? 1 : 0.55; hint.mesh.visible = !!s; },
       toggleInventory() { showInventory = !showInventory; if (showInventory) drawInventory(); },
       // the end: the plan seen from above, drawn once onto a panel; everything else goes dark
-      ended(lines, planCam, aspect) { endedLines = lines; showInventory = true; drawInventory(); plan = { cam: planCam, aspect }; },
+      ended(lines, register, planCam, aspect) { endedLines = lines; endedRegister = register; showInventory = true; drawInventory(); plan = { cam: planCam, aspect }; },
+      get endShown() { return !!(plan && plan.done); },
+      guideStart() { guidePage = 0; drawGuide(); },
+      get guiding() { return guidePage >= 0; },
+      guideNext() { if (++guidePage >= GUIDE().length) guidePage = -1; else drawGuide(); },
+      // a new visit from the end screen, without leaving VR
+      restart() {
+        if (plan) { root.remove(plan.mesh); plan.mesh.geometry.dispose(); plan.mesh.material.dispose(); plan.rt.dispose(); }
+        plan = null; endedLines = null; endedRegister = []; showInventory = false; peekT = 0;
+        inventoryP.mesh.position.set(-0.34, -0.12, 0); dot.visible = true; shared.uAmbK.value = XR_AMBIENT;
+        this.near(null); this.guideStart();
+      },
       update(dt) {
         if (!root) return;
         frames++; fpsT += dt;
@@ -2341,7 +2439,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           hint.mesh.lookAt(viewPos);
         }
         const nowText = `${$('#accessT').textContent}   ${$('#invCount').textContent}`;
-        corner.mesh.visible = entered;
+        corner.mesh.visible = entered && guidePage < 0;
         if (nowText !== cornerText) {
           cornerText = nowText; const c = corner;
           c.g.clearRect(0, 0, c.w, c.h); c.g.textAlign = 'left'; c.g.shadowColor = '#000'; c.g.shadowBlur = 8; c.g.fillStyle = 'rgba(255,255,255,.75)'; c.g.font = '40px "Courier New",monospace';
@@ -2350,6 +2448,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         root.position.lerp(xrOffset, 1 - Math.exp(-dt * HUD_FOLLOW));
         root.lookAt(viewPos);
         if (peekT > 0) peekT -= dt;
+        guideP.mesh.visible = entered && guidePage >= 0;
         const inspecting = !!(visitor && visitor.inspecting);
         inventoryP.mesh.visible = (showInventory || peekT > 0) && !inspecting;
         inspectP.mesh.visible = inspecting;
@@ -2385,6 +2484,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   }
   function xrInput(dt, now, session) {
     const pads = [...session.inputSources].map((s) => s.gamepad).filter(Boolean);
+    if (xrHud.guiding) { xrPressed(pads, BTN_TRIGGER, 'take', () => xrHud.guideNext()); return; }
     let walk = 0, turn = 0;
     for (const p of pads) {
       const x = p.axes[2] || 0, y = p.axes[3] || 0;
@@ -2406,10 +2506,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       rig.position.copy(viewPos).add(xrOffset); rig.rotation.y += a;
     }
     xrPressed(pads, BTN_TRIGGER, 'take', () => {
-      if (visitor && visitor.debug.ended) location.reload();
+      if (visitor && visitor.debug.ended) { if (xrHud.endShown) visitor.reset(); }
       else if (visitor && !busy) visitor.take();
     });
-    xrPressed(pads, BTN_INVENTORY, 'inventory', () => xrHud.toggleInventory());
+    xrPressed(pads, BTN_INVENTORY, 'inventory', () => { if (!(visitor && visitor.debug.ended)) xrHud.toggleInventory(); });
+    xrPressed(pads, BTN_LEAVE, 'leave', () => { if (visitor && visitor.debug.ended && xrHud.endShown) session.end(); }); // back to the start screen: name, language
   }
   // before the frame's movement: where the head is now
   function xrBegin(dt, now) {
@@ -2440,7 +2541,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     camera.getWorldPosition(viewPos); camera.getWorldDirection(viewDir);
   }
   if (XRSIM) addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'i' && !e.repeat) xrHud.toggleInventory(); });
-  if (XRSIM) window.__test = { cam, moveBy, get visitor() { return visitor; }, get floorY() { return floorY; } }; // for checking on the Mac only
+  if (XRSIM) window.__test = { xrHud, cam, moveBy, get visitor() { return visitor; }, get floorY() { return floorY; } }; // for checking on the Mac only
 
   // ---------- VISITOR MODE: 48 material samples, an inventory, and a site that decays ----------
   // In every room lie 4 things of the house (a bent nail, a shard, a crown cap, a scrap of
@@ -2731,9 +2832,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const b = banners.shift(); if (!b || !bannerEl) { bannerBusy = false; return; }
       bannerBusy = true;
       bannerEl.className = 'banner' + (b.warn ? ' warn' : '');
-      bannerEl.innerHTML = `<div class="bt">${b.title}</div>${b.sub ? `<div class="bs mono">${b.sub}</div>` : ''}`;
+      bannerEl.innerHTML = `<div class="bt">${tr(b.title)}</div>${b.sub ? `<div class="bs mono">${tr(b.sub)}</div>` : ''}`;
       void bannerEl.offsetWidth; bannerEl.classList.add('on');
-      if (xrActive) xrHud.banner(b.title, b.sub, b.warn);
+      if (xrActive) xrHud.banner(tr(b.title), tr(b.sub), b.warn);
       setTimeout(() => { bannerEl.classList.remove('on'); if (xrActive) xrHud.banner(null); setTimeout(nextBanner, 450); }, b.hold || (banners.length ? 1500 : 2300));
     }
     // debris: when a gap opens, dust and bits rain down there for a few seconds
@@ -2831,7 +2932,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     addEventListener('keydown', (e) => {
       if (!entered || e.repeat || e.metaKey || e.ctrlKey) return;
       const k = e.key.toLowerCase();
-      if (k === 'e' || k === ' ' || (k === 'enter' && insp.s)) { e.preventDefault(); if (insp.s) conserve(); else pickUp(); }
+      if (k === 'e' || k === ' ' || (k === 'enter' && insp.s)) {
+        e.preventDefault();
+        if (xrActive && xrHud.guiding) xrHud.guideNext(); else if (ended) { if (xrActive && xrHud.endShown) reset(); } else if (insp.s) conserve(); else pickUp();
+      }
       if (k === 'escape') leave();
     });
 
@@ -2991,13 +3095,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if (window.__portalU) window.__portalU.uShut.value[i] = 1;
       const w = d.w + 0.25, bx = d.along === 'x' ? w : 0.35, bz = d.along === 'x' ? 0.35 : w;
       const block = new THREE.Mesh(new THREE.BoxGeometry(bx, 2.6, bz), new THREE.MeshBasicMaterial()); block.visible = false; block.position.set(d.x, 1.3, d.z);
-      for (const g of [world.collide, world.hard]) if (g) { const b = block.clone(); g.add(b); g.updateMatrixWorld(true); }
+      for (const g of [world.collide, world.hard]) if (g) { const b = block.clone(); g.add(b); g.updateMatrixWorld(true); doorDebris.push(b); }
       // rubble filling the doorway
       const n = 7000, pos = new Float32Array(n * 3);
       for (let k = 0; k < n; k++) { const y = Math.pow(Math.random(), 1.8) * 2.3;
         pos[k * 3] = d.x + (Math.random() - 0.5) * bx * (1.2 - y * 0.15); pos[k * 3 + 1] = y; pos[k * 3 + 2] = d.z + (Math.random() - 0.5) * bz * (1.2 - y * 0.15); }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x5c554c, size: 0.014 })));
+      const rubble = new THREE.Points(g, new THREE.PointsMaterial({ color: 0x5c554c, size: 0.014 })); scene.add(rubble); doorDebris.push(rubble);
       debris(d.x, 0, d.z, w, 1.5); say('crumble', 1); setTimeout(() => say('lost'), 250);
       const R = roomAt(d.x + (d.along === 'x' ? 0 : 0.6), d.z + (d.along === 'x' ? 0.6 : 0)) || roomAt(d.x, d.z);
       log('ROUTE COLLAPSED' + (R ? ' / ' + short(R.code) : ''), true); banner('Route collapsed', 'this way is gone', true);
@@ -3109,7 +3213,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       stage.classList.add('hud-glitch'); say('static', k);
       setTimeout(() => stage.classList.remove('hud-glitch'), 120 + Math.random() * 380 * (0.4 + k));
     }
+    let planUndo = null;
     function revealPlan() {
+      const shown = new Map(scene.children.map((c) => [c, c.visible]));
+      planUndo = () => scene.children.slice().forEach((c) => { if (shown.has(c)) c.visible = shown.get(c); else if (c !== insp.scene) scene.remove(c); });
       // from above, cut at 1.25 m: what is left of the house, where the samples were, the way you went
       const clips = CONFIG.rooms.map((r) => r.clip), left = Math.min(...clips.map((c) => c[0])), right = Math.max(...clips.map((c) => c[2])), top = Math.min(...clips.map((c) => c[1])), bottom = Math.max(...clips.map((c) => c[3]));
       const cx = (left + right) / 2, cz = (top + bottom) / 2, a = canvas.clientWidth / canvas.clientHeight;
@@ -3137,32 +3244,66 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       stage.classList.add('ending');
       topCam = oc;
     }
+    const REGISTER_ROWS = 6;
     function end(title) {
       if (ended) return;
       ended = true; closeInspect();
       const KEY = 'visitorMode.sessions';
       let all = []; try { all = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (err) {}
-      const me = { n: (all.length ? all[all.length - 1].n : 0) + 1, got, rem: Math.round(remaining * 100), ids: samples.filter((s) => s.state === 'stored').map((s) => s.id) };
+      const num = (all.length ? all[all.length - 1].n : 0) + 1;
+      const me = { n: num, name: visitorName || `Visitor ${String(num).padStart(3, '0')}`, got, rem: Math.round(remaining * 100), ids: samples.filter((s) => s.state === 'stored').map((s) => s.id) };
       all.push(me); try { localStorage.setItem(KEY, JSON.stringify(all.slice(-200))); } catch (err) {}
       const seen = new Set(all.flatMap((x) => x.ids || []));
+      // the register: most samples first; with as many, whoever left more of the site
+      const ranked = all.slice(-200).sort((a, b) => b.got - a.got || b.rem - a.rem).map((x, i) => ({ rank: i + 1, name: x.name || `Visitor ${String(x.n).padStart(3, '0')}`, got: x.got, rem: x.rem, me: x === me }));
+      const register = ranked.slice(0, REGISTER_ROWS); if (!register.some((r) => r.me)) register[register.length - 1] = ranked.find((r) => r.me);
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       $('#endTitle').textContent = title;
       const removed = 100 - Math.round(remaining * 100), mm = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
       $('#endStats').innerHTML = `Time on site ${mm(onSite)}<br>Samples conserved ${got} / ${TOTAL}<br>Samples lost ${lostN}<br>Routes collapsed ${shut.size}<br>Site remaining ${Math.round(remaining * 100)} %`;
       $('#endLine').textContent = got ? `${got} fragment${got === 1 ? '' : 's'} preserved. ${removed} % of the site removed.` : 'Nothing taken. The site remains.';
-      $('#endTable').innerHTML = '<tr><th>Session</th><th>Samples</th><th>Site remaining</th></tr>' +
-        all.slice(-7).map((x) => `<tr class="${x === me ? 'me' : ''}"><td>${String(x.n).padStart(3, '0')}</td><td>${x.got} / ${TOTAL}</td><td>${x.rem} %</td></tr>`).join('') +
+      $('#endTable').innerHTML = '<tr><th>Visitor</th><th>Samples</th><th>Site remaining</th></tr>' +
+        register.map((r) => `<tr class="${r.me ? 'me' : ''}"><td>${r.rank}. ${esc(r.name)}</td><td>${r.got} / ${TOTAL}</td><td>${r.rem} %</td></tr>`).join('') +
         `<tr><td colspan="3">Collective record ${seen.size} / ${TOTAL} samples conserved — ${all.length} sessions</td></tr>`;
       say('crumble', 0.7);
       setTimeout(() => {
         if (xrActive) { // VR: the plan seen from above and the numbers on panels
           const plan = revealPlan();
-          xrHud.ended([title, `Time on site ${mm(onSite)}`, `Samples conserved ${got} / ${TOTAL}`, `Samples lost ${lostN}`, `Routes collapsed ${shut.size}`, `Site remaining ${Math.round(remaining * 100)} %`, got ? `${got} preserved. ${removed} % removed.` : 'Nothing taken. The site remains.', 'Trigger: new visit'], plan.cam, plan.aspect);
+          xrHud.ended([tr(title), L('Time on site ', 'Zeit vor Ort ') + mm(onSite), L('Samples conserved ', 'Proben konserviert ') + `${got} / ${TOTAL}`, L('Samples lost ', 'Proben verloren ') + lostN, L('Routes collapsed ', 'Wege eingestürzt ') + shut.size, L('Site remaining ', 'Verbleibend ') + `${Math.round(remaining * 100)} %`,
+            got ? L(`${got} preserved. ${removed} % removed.`, `${got} bewahrt. ${removed} % entfernt.`) : L('Nothing taken. The site remains.', 'Nichts entnommen. Der Ort bleibt.'), L('Trigger: new visit', 'Abzug: neuer Besuch'), L('B / Y: start screen', 'B / Y: Startbildschirm')], register, plan.cam, plan.aspect);
           return;
         }
         revealPlan(); $('#ended').classList.add('on');
       }, 1800);
     }
     $('#endBtn').addEventListener('click', () => location.reload());
+    // a new visit in the same VR session: everything back as it was
+    const maskAtStart = planGrid ? planGrid.mask.slice() : null, doorDebris = [];
+    function reset() {
+      xrHud.restart();
+      if (planUndo) { planUndo(); planUndo = null; }
+      for (const o of doorDebris) { if (o.parent) o.parent.remove(o); if (o.geometry) o.geometry.dispose(); }
+      doorDebris.length = 0;
+      if (maskAtStart) planGrid.mask.set(maskAtStart);
+      for (const f of falls) { scene.remove(f.pts); f.pts.geometry.dispose(); } falls.length = 0;
+      marks.length = 0; shared.uDecay.value = 0; shared.uMarkN.value = 0; decayBase = 0; decayCreep = 0;
+      got = 0; lostN = 0; latest = null; latestText = ''; remaining = 1; ended = false; near = false;
+      access = (CONFIG.samples.minutes || 10) * 60; onSite = 0; leaveAsk = 0; warned.clear(); trail.length = 0;
+      shut.clear(); if (window.__portalU) window.__portalU.uShut.value.fill(0); doorWait = 0; hudT = 30;
+      lightScript = []; lightSeg = null; lightK = 1; gaze = null; gazeT = 0; gazeMark = null;
+      dir = null; dirN = 0; dirWait = 3; showDirective(); scanT = 0; banners.length = 0; xrHud.banner(null);
+      accessEl.textContent = `${String(CONFIG.samples.minutes || 10).padStart(2, '0')}:00`;
+      outsideT = 0; backFrom = null; backAlpha = 0; if (backTrail) { scene.remove(backTrail); backTrail.geometry.dispose(); backTrail = null; }
+      for (const s of samples) {
+        s.state = 'here'; s.t = 0; s.alive = 1; s.unstable = false; s.g.scale.setScalar(1);
+        s.slot.className = 'slot'; s.slot.innerHTML = ''; s.slot.title = '';
+      }
+      $('#invCount').textContent = `00 / ${TOTAL}`; condEl.textContent = 'STABLE'; labelEl.textContent = 'SITE CONDITION: '; remEl.textContent = '100 %';
+      if (logEl) logEl.innerHTML = '';
+      shared.uSpotOn.value = 1; applyBeamSize(); visitorName = '';
+      Object.assign(cam, CONFIG.start); xrPose.frames = 0; rig.rotation.y = XRSIM ? 0 : -cam.yaw;
+      inventorySeen = shared.uTime.value;
+    }
 
     // --- the detector: a crackle that gets denser close to a sample ---
     let crackT = 0;
@@ -3218,10 +3359,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           releaseKeys();
         }
         lightTick(dt); fallTick(dt);
-        if (entered && !ended) {
-          if (!introDone) { // what this is about, once, at the beginning (wording still to be settled with Iris)
+        const guiding = xrActive && xrHud.guiding; // the visit starts after the guide
+        if (entered && !ended && !guiding) {
+          if (!introDone && !xrActive) { // on a screen, in VR the guide says it
             introDone = true;
-            banner('Objective: recover samples', xrActive ? 'look at a marked sample, press the trigger' : 'click a marked sample', false, INTRO_HOLD);
+            banner(L('Objective: recover samples', 'Ziel: Proben entnehmen'), L('click a marked sample', 'klick auf eine markierte Probe'), false, INTRO_HOLD);
           }
           lookTick(dt); surveyTick(dt); directiveTick(dt); detectTick(dt); accessTick(dt); hudTick(dt); wayBackTick(dt);
           if (xrActive) { // long nothing taken: the inventory comes back for a moment
@@ -3232,12 +3374,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         }
         const cur = roomAt(cam.x, cam.z);
         for (const R of ROOMS) R.label.classList.toggle('here', !!cur && cur.code === R.code);
-        const aimS = entered && !insp.s && !ended ? aimed() : null, a = !!aimS;
+        const aimS = entered && !insp.s && !ended && !guiding ? aimed() : null, a = !!aimS;
         if (xrActive) xrHud.near(aimS);
         if (a !== near) { near = a; reticle.classList.toggle('near', a); hint.classList.toggle('on', a); }
         if (a) { hint.style.left = pointer.x + 'px'; hint.style.top = pointer.y + 'px'; }
       },
-      take: pickUp, get inspecting() { return !!insp.s; }, drawIcon, get latest() { return latest; }, get latestText() { return latestText; },
+      take: pickUp, reset, get inspecting() { return !!insp.s; }, drawIcon, get latest() { return latest; }, get latestText() { return latestText; },
       get got() { return got; }, get remaining() { return remaining; }, marks, samples, ROOMS,
       get debug() { return { dir, dirWait, dirN, ended, entered, scanT }; },
       testStore(s) { s.state = 'inspect'; s.g.visible = false; store(s); }, // for testing only
