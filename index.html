@@ -3254,8 +3254,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const me = { n: num, name: visitorName || `Visitor ${String(num).padStart(3, '0')}`, got, rem: Math.round(remaining * 100), ids: samples.filter((s) => s.state === 'stored').map((s) => s.id) };
       all.push(me); try { localStorage.setItem(KEY, JSON.stringify(all.slice(-200))); } catch (err) {}
       const seen = new Set(all.flatMap((x) => x.ids || []));
-      // the register: most samples first; with as many, whoever left more of the site
-      const ranked = all.slice(-200).sort((a, b) => b.got - a.got || b.rem - a.rem).map((x, i) => ({ rank: i + 1, name: x.name || `Visitor ${String(x.n).padStart(3, '0')}`, got: x.got, rem: x.rem, me: x === me }));
+      // the register: whoever left most of the site first; with as much left, fewer samples first
+      const ranked = all.slice(-200).sort((a, b) => b.rem - a.rem || a.got - b.got).map((x, i) => ({ rank: i + 1, name: x.name || `Visitor ${String(x.n).padStart(3, '0')}`, got: x.got, rem: x.rem, me: x === me }));
       const register = ranked.slice(0, REGISTER_ROWS); if (!register.some((r) => r.me)) register[register.length - 1] = ranked.find((r) => r.me);
       const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       $('#endTitle').textContent = title;
