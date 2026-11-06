@@ -1204,7 +1204,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 // The libraries and the scan are embedded (no network requests at all), so the
 // piece keeps working as long as this one file exists.
 (async function () {
-  const CONFIG = {"rooms": [{"file": "K01", "x": 12.7, "z": 8.55, "rot": 90, "floor": -1.35, "clip": [10.82, 5.95, 15.0, 10.61]}, {"file": "K02", "x": 16.53, "z": 8.49, "rot": 90, "floor": -1.2, "clip": [14.3, 5.95, 18.95, 10.61]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.68, 19.72, 16.47, 30.46]}, {"file": "R03", "x": 19.09, "z": 21.69, "rot": 270, "floor": -1.25, "clip": [15.77, 19.72, 23.61, 25.25]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.77, 24.55, 23.79, 30.46]}, {"file": "R04", "x": 30.72, "z": 27.48, "rot": 270, "floor": -1.75, "clip": [24.19, 24.55, 35.51, 30.46]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.55, 25.65, 43.95, 30.46]}, {"file": "R07", "x": 40.87, "z": 22.93, "rot": 0, "floor": -1.45, "clip": [36.85, 19.72, 43.95, 26.35]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.01, 39.75, 26.35]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [23.09, 22.75, 33.5, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [34.81, 25.65, 38.25, 30.46]}, {"file": "R08", "x": 36.02, "z": 16.79, "rot": 0, "floor": -1.2, "clip": [32.8, 19.72, 37.55, 24.71]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.15, 19.72, 33.5, 23.45]}], "plan": {"src": "grundriss.png", "pxPerM": 54.6, "ignore": [[20.5, 0, 47.7, 17.5]], "exit": [21.7, 20.0], "cellarDoor": [14.2, 12.0], "closedDoors": [[24.2, 30.0], [29.2, 20.0], [27.8, 23.1], [16.7, 26.6]], "notDoors": [[13.4, 11.3], [15.0, 11.3], [26.6, 20.8], [37.9, 25.2], [38.8, 25.2]], "extraDoors": [[13.7, 10.3, 0.65, "x"], [15.3, 10.3, 0.65, "x"]]}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": ["N01"]}};
+  const CONFIG = {"rooms": [{"file": "K01", "x": 12.301, "z": 8.55, "rot": 90, "floor": -1.35, "clip": [9.9, 5.9, 14.42, 13.1], "scale": 1.02, "cut": [9, 10.65, 12.3, 14]}, {"file": "K02", "x": 16.672, "z": 8.306, "rot": 180, "floor": -1.2, "clip": [14.38, 5.9, 19.0, 13.1], "scale": 1.06, "cut": [16.1, 10.5, 20, 14]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.25, 20.0, 15.85, 30.55]}, {"file": "R03", "x": 19.47, "z": 22.232, "rot": 90, "floor": -1.25, "clip": [15.5, 19.9, 26.7, 24.75], "scale": 1.16, "cut": [23.55, 19, 27, 22.7]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.6, 24.4, 24.6, 30.5]}, {"file": "R04", "x": 30.72, "z": 27.48, "rot": 270, "floor": -1.75, "clip": [24.5, 24.7, 35.55, 30.55], "cut": [30.9, 24, 36, 26.05]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.5, 25.95, 42.85, 30.55]}, {"file": "R07", "x": 39.337, "z": 23.13, "rot": 90, "floor": -1.45, "clip": [35.75, 19.85, 42.85, 26.15], "scale": 1.08, "cut": [35, 24.8, 38.65, 27]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.6, 38.65, 26.3]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [26.7, 22.7, 33.3, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [35.45, 26.0, 37.6, 30.55]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.2, 20.1, 33.3, 23.25]}], "plan": {"size": [47.62, 33.63], "walls": [[10.12, 10.48, 10.18, 6.15], [10.12, 6.19, 18.77, 6.15], [14.38, 6.36, 14.4, 10.69], [18.75, 10.46, 18.77, 6.17], [15.87, 10.37, 18.81, 10.33], [15.89, 12.77, 15.91, 10.31], [10.16, 10.5, 12.39, 10.44], [12.45, 12.9, 12.45, 10.56], [12.41, 12.88, 13.45, 12.88], [15.0, 12.83, 15.91, 12.79], [3.8, 20.51, 20.83, 20.08], [35.89, 20.07, 36.06, 24.5], [35.91, 20.04, 42.51, 20.04], [42.49, 20.0, 42.66, 30.29], [3.5, 20.49, 3.78, 30.29], [15.67, 26.83, 15.74, 20.19], [22.48, 20.19, 23.33, 20.19], [23.26, 20.18, 23.42, 22.82], [31.31, 20.3, 33.11, 20.28], [31.33, 23.08, 31.37, 20.45], [33.17, 24.82, 33.17, 20.3], [23.38, 22.87, 31.1, 22.84], [15.72, 23.46, 17.92, 23.42], [17.78, 23.4, 17.86, 26.83], [23.1, 26.83, 23.1, 24.33], [17.77, 24.56, 23.12, 24.44], [24.44, 24.84, 28.51, 24.82], [24.48, 24.71, 24.56, 28.36], [32.39, 24.78, 36.42, 24.71], [30.76, 25.11, 30.86, 26.26], [38.55, 26.08, 42.61, 26.01], [30.8, 26.14, 35.38, 26.2], [35.4, 26.13, 35.7, 30.33], [37.46, 26.09, 37.65, 30.33], [15.48, 26.79, 17.9, 26.79], [15.72, 30.29, 15.78, 28.38], [23.1, 30.18, 23.12, 28.42], [3.56, 30.23, 23.23, 30.23], [24.75, 30.3, 42.66, 30.37], [20.83, 20.08, 20.94, 20.2], [31.1, 22.85, 31.37, 22.85], [31.35, 23.1, 32.05, 23.1], [32.92, 23.1, 33.17, 23.1], [28.51, 24.82, 29.25, 25.05], [24.56, 29.9, 24.6, 30.3], [36.42, 24.71, 36.63, 24.68], [36.06, 24.5, 36.06, 24.71], [35.38, 26.2, 35.64, 26.13], [37.16, 26.1, 37.5, 26.05], [3.5, 20.49, 3.8, 20.51], [14.21, 10.45, 14.4, 10.45], [14.38, 6.17, 14.38, 6.36], [10.12, 6.15, 10.12, 6.2], [18.77, 10.33, 18.77, 10.46], [42.51, 20.04, 42.49, 20.0], [30.78, 25.11, 30.76, 25.11], [38.16, 24.68, 38.6, 24.68], [38.6, 24.68, 38.6, 26.05]], "doors": [[15.21, 10.34, 1.52, "x"], [13.31, 10.45, 1.8, "x"], [14.235, 12.9, 1.53, "x"], [21.7, 20.27, 1.52, "x"], [32.485, 23.11, 0.87, "x"], [23.85, 24.68, 1.42, "x"], [37.395, 24.68, 1.53, "x"], [30.015, 25.09, 1.53, "x"], [38.0, 26.05, 1.05, "x"], [36.4, 26.13, 1.52, "x"], [15.72, 27.59, 1.52, "z"], [23.22, 27.59, 1.52, "z"], [24.56, 29.125, 1.55, "z"], [23.99, 30.28, 1.52, "x"]], "exit": [21.7, 20.27], "exits": [[23.99, 30.28]], "cellarDoor": [14.235, 12.9]}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": ["N01"]}};
 
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -1450,16 +1450,18 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     uniform mat4 uInkMat;      // world → ink space (x, y in -0.5…0.5 across the letters)
     uniform float uInkOn;
     uniform vec4 uClip;        // this room's part of the floor plan (x0, z0, x1, z1): the scan is cut there
+    uniform vec4 uCut;         // a corner of that rectangle which belongs to another room
     uniform float uTime;
     ${LIGHT}
     ${DECAY}
     void main(){
       gWorld = vWorld;
       if (vWorld.x < uClip.x || vWorld.z < uClip.y || vWorld.x > uClip.z || vWorld.z > uClip.w) discard;
+      if (vWorld.x > uCut.x && vWorld.z > uCut.y && vWorld.x < uCut.z && vWorld.z < uCut.w) discard;
       // the cut frays too, like every edge of the scan
       float dc = min(min(vWorld.x - uClip.x, uClip.z - vWorld.x), min(vWorld.z - uClip.y, uClip.w - vWorld.z));
       float hc = fract(sin(dot(floor(vWorld * 260.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-      if (dc < 0.35 && hc > pow(dc / 0.35, 0.7)) discard;
+      if (dc < 0.15 && hc > pow(dc / 0.15, 0.7)) discard;
       // where the scan ends, the surface frays out (ragged, not a clean cut)
       float cell = fract(sin(dot(floor(vWorld * 400.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
       float wob = fract(sin(dot(floor(vWorld * 9.0), vec3(39.3, 11.7, 83.1))) * 43758.5453) - 0.5;
@@ -1522,7 +1524,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     varying vec3 vWorldNormal;
     varying vec2 vUv;
     varying vec3 vWorldP;
-    uniform vec4 uClip;
+    uniform vec4 uClip, uCut;
     uniform float uGlow, uTime; // the house: points at the scans' edges glow and shimmer
     uniform sampler2D uMap;
     uniform float uHasMap;
@@ -1534,6 +1536,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if (dot(c, c) > 0.25) discard;
       gWorld = vWorldP;
       if (vWorldP.x < uClip.x || vWorldP.z < uClip.y || vWorldP.x > uClip.z || vWorldP.z > uClip.w) discard;
+      if (vWorldP.x > uCut.x && vWorldP.z > uCut.y && vWorldP.x < uCut.z && vWorldP.z < uCut.w) discard;
       if (remainAt(vWorldP) < 0.0) discard;
       vec3 tex = uHasMap > 0.5 ? texture2D(uMap, vUv).rgb * uColor : uColor;
       vec3 col = shade(tex, normalize(vWorldNormal));
@@ -1617,7 +1620,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         uBeamRadius: shared.uBeamRadius, uLightPos: shared.uLightPos,
         uPower: shared.uPower, uBoost: shared.uBoost, uAmbK: shared.uAmbK, uUV: shared.uUV,
         uInkTex: shared.uInkTex, uInkMat: shared.uInkMat, uInkOn: shared.uInkOn,
-        uClip: { value: new THREE.Vector4(-1e9, -1e9, 1e9, 1e9) },
+        uClip: { value: new THREE.Vector4(-1e9, -1e9, 1e9, 1e9) }, uCut: { value: new THREE.Vector4(0, 0, 0, 0) },
         uSpotOn: shared.uSpotOn, uSpotPos: shared.uSpotPos, uSpotDir: shared.uSpotDir, uSpotAng: shared.uSpotAng,
         uTime: shared.uTime, ...decayU,
       },
@@ -1634,7 +1637,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         uBeamRadius: shared.uBeamRadius, uLightPos: shared.uLightPos,
         uPower: shared.uPower, uBoost: shared.uBoost, uAmbK: shared.uAmbK, uUV: shared.uUV,
         uSpotOn: shared.uSpotOn, uSpotPos: shared.uSpotPos, uSpotDir: shared.uSpotDir, uSpotAng: shared.uSpotAng,
-        uClip: u.uClip || { value: new THREE.Vector4(-1e9, -1e9, 1e9, 1e9) },
+        uClip: u.uClip || { value: new THREE.Vector4(-1e9, -1e9, 1e9, 1e9) }, uCut: u.uCut || { value: new THREE.Vector4(0, 0, 0, 0) },
         uGlow: { value: 0 }, uTime: shared.uTime, ...decayU,
       },
     });
@@ -1888,6 +1891,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       holder.add(inner);
       holder.rotation.y = -r.rot * Math.PI / 180;
       holder.position.set(r.x, 0, r.z);
+      holder.scale.setScalar(r.scale || 1);
       holder.userData.room = r.file;
       model.add(holder);
       progress(0.05 + 0.6 * (i + 1) / CONFIG.rooms.length);
@@ -1907,8 +1911,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // each scan only inside its own room (with a little margin): what it saw through the
   // doors of the next rooms is cut off, that room has its own scan
   model.children.forEach((holder, i) => {
-    const c = CONFIG.rooms[i].clip; if (!c) return;
-    holder.traverse((o) => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.uniforms.uClip.value.set(...c)); });
+    const c = CONFIG.rooms[i].clip, cut = CONFIG.rooms[i].cut; if (!c) return;
+    holder.traverse((o) => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.uniforms.uClip.value.set(...c); if (cut) m.uniforms.uCut.value.set(...cut); }); });
   });
   scene.add(model);
   model.updateMatrixWorld(true);
@@ -2049,80 +2053,20 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // inside the house (invisible), so you can cross from one scan to the next.
   const VEIL_SEEN_NEAR = 3.5, VEIL_SEEN_FAR = 8;
   const collide = new THREE.Group(), hard = new THREE.Group();
-  let planGrid = null;
+  let planGrid = null, wallMat = null, wallSlabs = null;
+  const WALL_BEHIND = 0.35;
   await (async () => {
-    const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = CONFIG.plan.src; });
-    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-    const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const d = g.getImageData(0, 0, c.width, c.height).data, k = CONFIG.plan.pxPerM, cell = 0.05;
-    const W = Math.ceil(img.width / k / cell), H = Math.ceil(img.height / k / cell), m = new Uint8Array(W * H);
-    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) {
-      const i = (y * img.width + x) * 4;
-      if ((CONFIG.plan.ignore || []).some(([ax, az, bx, bz]) => x / k > ax && x / k < bx && y / k > az && y / k < bz)) continue; // buildings that were not scanned
-      if (d[i] > 180 && d[i + 1] > 60 && d[i + 1] < 170 && d[i + 2] < 90) m[Math.floor(y / k / cell) * W + Math.floor(x / k / cell)] = 1;
-    }
-    // drop the room labels (orange boxes with white letters): separate blobs about a
-    // label's size, fairly filled; walls are long thin lines
-    const seen = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++) {
-      if (!m[i] || seen[i]) continue;
-      const st = [i], comp = []; seen[i] = 1;
-      let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
-      while (st.length) { const j = st.pop(); comp.push(j); const x = j % W, y = (j / W) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
-        for (const n of [j - 1, j + 1, j - W, j + W]) if (n >= 0 && n < W * H && m[n] && !seen[n]) { seen[n] = 1; st.push(n); } }
-      const bw = (x1 - x0 + 1) * cell, bh = (y1 - y0 + 1) * cell, fill = comp.length / ((x1 - x0 + 1) * (y1 - y0 + 1));
-      const label = Math.min(bw, bh) >= 0.3 && Math.max(bw, bh) <= 2.2 && fill > 0.35;
-      if (label || comp.length < 6) for (const j of comp) m[j] = 0;
-    }
-    // a label touching a wall: fill its letters, then whatever is still solid after
-    // shrinking by 0.15 m on every side is a label (walls are thinner), remove it
-    {
-      const f = m.slice(), wseen = new Uint8Array(W * H);
-      for (let i = 0; i < W * H; i++) {
-        if (f[i] || wseen[i]) continue;
-        const st = [i], comp = []; wseen[i] = 1; let edge = false;
-        while (st.length && comp.length < 400) { const j = st.pop(); comp.push(j); const x = j % W, y = (j / W) | 0; if (!x || !y || x === W - 1 || y === H - 1) edge = true;
-          for (const n of [j - 1, j + 1, j - W, j + W]) if (n >= 0 && n < W * H && !f[n] && !wseen[n]) { wseen[n] = 1; st.push(n); } }
-        if (!edge && !st.length && comp.length < 60) for (const j of comp) f[j] = 1; // a letter's hole
-      }
-      const R = 3, lab = new Uint8Array(W * H);
-      for (let y = R; y < H - R; y++) for (let x = R; x < W - R; x++) {
-        let all = 1; for (let j = -R; j <= R && all; j++) for (let i = -R; i <= R; i++) if (!f[(y + j) * W + x + i]) { all = 0; break; }
-        if (all) for (let j = -R - 1; j <= R + 1; j++) for (let i = -R - 1; i <= R + 1; i++) lab[(y + j) * W + x + i] = 1;
-      }
-      for (let i = 0; i < W * H; i++) if (lab[i]) m[i] = 0;
-    }
-    // keep only the house's outer walls (where outside meets the wall, and that wall's
-    // thickness): inside, you bump into what you see, the scans
-    // the doors of the plan: gaps of 0.6–1.8 m between two pieces of the same wall line
-    const doors = [];
-    {
-      const rowRuns = (get, len, other) => { // runs of wall cells along one line
-        const runs = []; let i = 0; while (i < len) { if (!get(i)) { i++; continue; } const a = i; while (i < len && get(i)) i++; runs.push([a, i]); } return runs;
-      };
-      for (let y = 0; y < H; y++) {
-        const runs = rowRuns((x) => m[y * W + x], W);
-        for (let k = 1; k < runs.length; k++) { const g = (runs[k][0] - runs[k - 1][1]) * cell; if (g >= 0.6 && g <= 1.8 && (runs[k][1] - runs[k][0]) * cell >= 0.25 && (runs[k - 1][1] - runs[k - 1][0]) * cell >= 0.25) doors.push({ x: (runs[k - 1][1] + runs[k][0]) / 2 * cell, z: (y + 0.5) * cell, w: g, along: 'x' }); }
-      }
-      for (let x = 0; x < W; x++) {
-        const runs = rowRuns((y) => m[y * W + x], H);
-        for (let k = 1; k < runs.length; k++) { const g = (runs[k][0] - runs[k - 1][1]) * cell; if (g >= 0.6 && g <= 1.8 && (runs[k][1] - runs[k][0]) * cell >= 0.25 && (runs[k - 1][1] - runs[k - 1][0]) * cell >= 0.25) doors.push({ x: (x + 0.5) * cell, z: (runs[k - 1][1] + runs[k][0]) / 2 * cell, w: g, along: 'z' }); }
+    // the walls and doors as Iris drew them (_build/plan_iris.json): lines in metres on a grid of 5 cm
+    const cell = 0.05, W = Math.ceil(CONFIG.plan.size[0] / cell), H = Math.ceil(CONFIG.plan.size[1] / cell), m = new Uint8Array(W * H);
+    const WALL_HALF = 0.07;
+    for (const [ax, az, bx, bz] of CONFIG.plan.walls) {
+      const steps = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.02);
+      for (let t = 0; t <= steps; t++) {
+        const x = ax + (bx - ax) * t / steps, z = az + (bz - az) * t / steps;
+        for (let y = Math.floor((z - WALL_HALF) / cell); y <= (z + WALL_HALF) / cell; y++) for (let i = Math.floor((x - WALL_HALF) / cell); i <= (x + WALL_HALF) / cell; i++) m[y * W + i] = 1;
       }
     }
-    window.__doorsRaw = doors.slice();
-    // doors that are not ways in this piece: closed like the wall around them, without a veil
-    const closedDoors = CONFIG.plan.closedDoors || [];
-    const isClosed = (d) => closedDoors.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < 0.7);
-    for (const d of doors) if (isClosed(d)) {
-      const ax = d.along === 'x' ? d.x - d.w / 2 - 0.05 : d.x - 0.12, bx = d.along === 'x' ? d.x + d.w / 2 + 0.05 : d.x + 0.12;
-      const az = d.along === 'x' ? d.z - 0.12 : d.z - d.w / 2 - 0.05, bz = d.along === 'x' ? d.z + 0.12 : d.z + d.w / 2 + 0.05;
-      for (let y = Math.floor(az / cell); y <= bz / cell; y++) for (let x = Math.floor(ax / cell); x <= bx / cell; x++) m[y * W + x] = 1;
-    }
-    // gaps the search finds that are no doors (the short marks beside a door), and the two
-    // cellar doors, too narrow in the drawing to be found
-    const near = (list, d) => list.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < 0.7);
-    for (let i = doors.length - 1; i >= 0; i--) if (isClosed(doors[i]) || near(CONFIG.plan.notDoors || [], doors[i])) doors.splice(i, 1);
-    for (const [x, z, w, along] of CONFIG.plan.extraDoors || []) doors.push({ x, z, w, along });
+    const doors = CONFIG.plan.doors.map(([x, z, w, along]) => ({ x, z, w, along }));
     window.__doors = doors;
     // portals: in every doorway of the plan a veil of fine glowing dust, rising slowly
     // and twinkling, so the ways on can be seen from afar in the dark
@@ -2182,6 +2126,21 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const floor = new THREE.Mesh(fg, new THREE.MeshBasicMaterial()); floor.visible = false;
     collide.add(walls, floor);
     hard.add(walls.clone(), floor.clone());
+    // what stands behind the scans: every wall of the plan is a dark, solid surface that nothing dissolves.
+    // Drawn a little further from the eye than it is, so the scan's own wall stays in front of it.
+    wallMat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      vertexShader: `void main(){ vec4 w = modelMatrix * vec4(position, 1.0); w.xyz += normalize(w.xyz - cameraPosition) * ${WALL_BEHIND.toFixed(2)}; gl_Position = projectionMatrix * viewMatrix * w; }`,
+      fragmentShader: 'void main(){ gl_FragColor = vec4(vec3(0.015), 1.0); }',
+    });
+    {
+      const P = [], I = [], low = -0.3, high = 4.5;
+      for (const [ax, az, bx, bz] of CONFIG.plan.walls) {
+        const b = P.length / 3; P.push(ax, low, az, bx, low, bz, bx, high, bz, ax, high, az); I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I);
+      wallSlabs = new THREE.Mesh(g, wallMat); wallSlabs.frustumCulled = false; wallSlabs.renderOrder = -1; scene.add(wallSlabs);
+    }
     if (CONFIG.outerWallsOnly) {
       // what you bump into inside: each scan's walls and furniture from knee height up
       // (low rubble on the floor stays walkable), only inside its own room
@@ -2197,6 +2156,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
             C.fromBufferAttribute(p, idx ? idx.getX(t * 3 + 2) : t * 3 + 2).applyMatrix4(mw);
             const cx = (A.x + B.x + C.x) / 3, cy = (A.y + B.y + C.y) / 3, cz = (A.z + B.z + C.z) / 3;
             if (cy < 0.4 || cy > 1.95 || cx < c[0] + mg || cx > c[2] - mg || cz < c[1] + mg || cz > c[3] - mg) continue;
+            if (r.cut && cx > r.cut[0] && cz > r.cut[1] && cx < r.cut[2] && cz < r.cut[3]) continue;
             N.subVectors(B, A).cross(E.subVectors(C, A)); const l = N.length(); if (!l || Math.abs(N.y / l) > 0.8) continue;
             // a door of the plan: always open (the scans' own doors may sit a little off)
             if (doors.some((d) => d.along === 'x' ? Math.abs(cx - d.x) < d.w / 2 + 0.15 && Math.abs(cz - d.z) < 0.7 : Math.abs(cz - d.z) < d.w / 2 + 0.15 && Math.abs(cx - d.x) < 0.7)) continue;
@@ -2588,9 +2548,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
     // --- rooms, and where the samples lie: on level surfaces, 4 per room, one pair close together ---
     const skip = CONFIG.samples.skip || [];
-    const rooms = CONFIG.rooms.map((r, i) => ({ code: r.file, holder: model.children[i], c: r.clip || [-1e9, -1e9, 1e9, 1e9] }))
+    const rooms = CONFIG.rooms.map((r, i) => ({ code: r.file, holder: model.children[i], c: r.clip || [-1e9, -1e9, 1e9, 1e9], cut: r.cut }))
       .filter((o) => !skip.includes(o.code));
-    const roomAt = (x, z) => rooms.find((o) => x > o.c[0] && x < o.c[2] && z > o.c[1] && z < o.c[3]) || null;
+    const inCut = (o, x, z) => o.cut && x > o.cut[0] && z > o.cut[1] && x < o.cut[2] && z < o.cut[3];
+    const roomAt = (x, z) => rooms.find((o) => x > o.c[0] && x < o.c[2] && z > o.c[1] && z < o.c[3] && !inCut(o, x, z)) || null;
+    // fewer rooms than the total asks for: the largest rooms hold one more
+    const area = (o) => (o.c[2] - o.c[0]) * (o.c[3] - o.c[1]);
+    const oneMore = rooms.slice().sort((a, b) => area(b) - area(a)).slice(0, Math.max(0, TOTAL - rooms.length * PER_ROOM));
     const P = new THREE.Vector3(), N = new THREE.Vector3(), up = new THREE.Raycaster(); up.firstHitOnly = true;
     const survey = []; // points all over the scans' surfaces: how much of the site is left
     const spots = [];
@@ -2598,14 +2562,15 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const meshes = []; o.holder.traverse((m) => { if (m.isMesh) meshes.push(m); });
       const ss = meshes.map((m) => { const s = new MeshSurfaceSampler(m); s.setRandomGenerator(rand); return s.build(); });
       const pick = () => { const k = Math.floor(rand() * meshes.length); ss[k].sample(P, N); P.applyMatrix4(meshes[k].matrixWorld); N.transformDirection(meshes[k].matrixWorld); };
-      const c = o.c, inside = (m) => P.x > c[0] + m && P.x < c[2] - m && P.z > c[1] + m && P.z < c[3] - m;
+      const c = o.c, inside = (m) => P.x > c[0] + m && P.x < c[2] - m && P.z > c[1] + m && P.z < c[3] - m && !inCut(o, P.x, P.z);
+      const want = PER_ROOM + (oneMore.includes(o) ? 1 : 0);
       for (let k = Math.round((c[2] - c[0]) * (c[3] - c[1]) * 12); k > 0; k--) { pick(); if (inside(0)) survey.push([P.x, P.y, P.z]); }
       const mine = [];
-      for (let tries = 0; mine.length < PER_ROOM && tries < 8000; tries++) {
+      for (let tries = 0; mine.length < want && tries < 8000; tries++) {
         pick();
         if (N.y < 0.92 || P.y < -0.35 || P.y > 1.25 || !inside(0.45)) continue;
         const d = mine.map((q) => Math.hypot(q.x - P.x, q.z - P.z)), relax = tries > 5000;
-        if (mine.length === PER_ROOM - 1 && !relax) { if (!d.some((v) => v > 0.45 && v < 0.8) || d.some((v) => v <= 0.45)) continue; } // the pair
+        if (mine.length === want - 1 && !relax) { if (!d.some((v) => v > 0.45 && v < 0.8) || d.some((v) => v <= 0.45)) continue; } // the pair
         else if (d.some((v) => v < (relax ? 0.5 : 1.1))) continue;
         up.set(P.clone().addScaledVector(N, 0.02), new THREE.Vector3(0, 1, 0)); up.far = 0.22;
         if (up.intersectObject(o.holder, true).length) continue; // no room above it
@@ -3068,7 +3033,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const trail = []; let trailT = 0;
     const doorsP = window.__portalDoors || [], shut = new Set();
     const sameDoor = (d, p) => p && Math.hypot(d.x - p[0], d.z - p[1]) < 0.7;
-    const lastingDoor = (d) => sameDoor(d, CONFIG.plan.exit) || sameDoor(d, CONFIG.plan.cellarDoor); // the way out and into the cellar stay
+    const lastingDoor = (d) => sameDoor(d, CONFIG.plan.exit) || sameDoor(d, CONFIG.plan.cellarDoor) || (CONFIG.plan.exits || []).some((p) => sameDoor(d, p)); // the ways out and into the cellar stay
     // a way may only fall in when the visitor can still walk to the way out afterwards
     const DOOR_PAUSE = 45, DOOR_RETRY = 5;
     function doorCells(d, write) { // the doorway on the plan's grid
@@ -3102,6 +3067,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         pos[k * 3] = d.x + (Math.random() - 0.5) * bx * (1.2 - y * 0.15); pos[k * 3 + 1] = y; pos[k * 3 + 2] = d.z + (Math.random() - 0.5) * bz * (1.2 - y * 0.15); }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       const rubble = new THREE.Points(g, new THREE.PointsMaterial({ color: 0x5c554c, size: 0.014 })); scene.add(rubble); doorDebris.push(rubble);
+      const shutWall = new THREE.Mesh(new THREE.PlaneGeometry(w, 4.8), wallMat); shutWall.position.set(d.x, 2.1, d.z); if (d.along === 'z') shutWall.rotation.y = Math.PI / 2; // nothing to see through it now
+      shutWall.renderOrder = -1; scene.add(shutWall); doorDebris.push(shutWall);
       debris(d.x, 0, d.z, w, 1.5); say('crumble', 1); setTimeout(() => say('lost'), 250);
       const R = roomAt(d.x + (d.along === 'x' ? 0 : 0.6), d.z + (d.along === 'x' ? 0.6 : 0)) || roomAt(d.x, d.z);
       log('ROUTE COLLAPSED' + (R ? ' / ' + short(R.code) : ''), true); banner('Route collapsed', 'this way is gone', true);
@@ -3145,7 +3112,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     }
     // how far every spot outside is from the way in (keeping off the walls)
     const CLEARANCE = 0.6, RETURN_AFTER = 45, RETURN_REDRAW = 5, RETURN_MOVED = 4, WAY_STEP = 6; // WAY_STEP: cells between trail points
-    const HOUSE = [3.5, 19.9, 44, 30.6], CELLAR = [10.7, 5.9, 18.9, 12.4];
+    const HOUSE = [3.3, 19.9, 42.9, 30.6], CELLAR = [9.9, 5.9, 19, 13.1];
     const inBox = (b, x, z) => x > b[0] && x < b[2] && z > b[1] && z < b[3];
     const way = (() => {
       const exit = CONFIG.plan.exit; if (!planGrid || !exit) return null;
@@ -3238,6 +3205,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xe1681c, transparent: true, opacity: 0.55 })));
       }
       falls.forEach((f) => (f.pts.visible = false));
+      scene.traverse((o) => { if (o.material === wallMat) o.visible = false; }); // the plan shows the scans alone
       scene.traverse((o) => { if (o.isPoints && o.material.uniforms && o.material.uniforms.uStrength) o.visible = false; }); // no veils or dust trail on the plan
       shared.uSpotOn.value = 0; shared.uBeamRadius.value = 1e5; lightK = 1;
       if (xrActive) return { cam: oc, aspect: hw / hh };
