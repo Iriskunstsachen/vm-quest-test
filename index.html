@@ -2191,7 +2191,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const BTN_TRIGGER = 0, BTN_INVENTORY = 4, BTN_AMBIENT = 5;
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
   const INSPECT_DISTANCE = 0.5, INSPECT_DROP = 0.05, INSPECT_SCALE = 1.5;
-  const xrPose = { frames: 0, placed: false, baseX: 0, baseZ: 0, turned: false, held: {}, ambient: AMBIENT_START };
+  const XR_SETTLE_FRAMES = 30;
+  const xrPose = { frames: 0, baseX: 0, baseZ: 0, turned: false, held: {}, ambient: AMBIENT_START };
   const xrUp = new THREE.Vector3(0, 1, 0), xrOffset = new THREE.Vector3(), xrFlat = new THREE.Vector3();
 
   const xrHud = (() => {
@@ -2297,6 +2298,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   function xrStart() {
     xrActive = true; window.__xrActive = true;
     xrHud.build();
+    // until now the camera stood directly in the room; from here on it rides on the rig
+    camera.position.set(0, CONFIG.eye, 0); camera.rotation.set(0, 0, 0);
     rig.rotation.y = XRSIM ? 0 : -cam.yaw;
     rig.position.set(cam.x, floorY, cam.z);
     shared.uAmbK.value = AMBIENT_STEPS[AMBIENT_START];
@@ -2306,7 +2309,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       session.addEventListener('end', () => location.reload());
       await renderer.xr.setSession(session);
       if (session.updateTargetFrameRate && session.supportedFrameRates && session.supportedFrameRates.includes(FOVEATED_RATE)) await session.updateTargetFrameRate(FOVEATED_RATE);
-    }).catch((err) => { console.error(err); xrActive = false; window.__xrActive = false; });
+    }).catch((err) => { // no VR after all: back to the screen version
+      console.error(err); xrActive = false; window.__xrActive = false;
+      rig.position.set(0, 0, 0); rig.rotation.set(0, 0, 0);
+    });
   }
   function xrPressed(pads, i, name, action) {
     const on = pads.some((p) => p.buttons[i] && p.buttons[i].pressed);
@@ -2347,15 +2353,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   }
   // before the frame's movement: where the head is now
   function xrBegin(dt, now) {
-    xrPose.frames++;
     if (XRSIM) { camera.position.set(0, CONFIG.eye, 0); camera.rotation.set(cam.pitch, -cam.yaw, 0); }
     camera.getWorldPosition(viewPos); camera.getWorldDirection(viewDir);
     const session = renderer.xr.getSession();
     if (session) {
-      if (!xrPose.placed) {
-        if (xrPose.frames < 3) { xrPose.baseX = cam.x; xrPose.baseZ = cam.z; return; } // the first pose has not arrived yet
+      if (++xrPose.frames <= XR_SETTLE_FRAMES) { // the first poses: put the head exactly on the starting point
         rig.position.x += cam.x - viewPos.x; rig.position.z += cam.z - viewPos.z; rig.position.y = floorY;
-        camera.getWorldPosition(viewPos); xrPose.placed = true;
+        camera.getWorldPosition(viewPos); xrPose.baseX = cam.x; xrPose.baseZ = cam.z;
+        return;
       }
       cam.x = viewPos.x; cam.z = viewPos.z; // walking around physically moves the visitor too
       cam.yaw = Math.atan2(viewDir.x, -viewDir.z); cam.pitch = Math.asin(clamp(viewDir.y, -1, 1));
