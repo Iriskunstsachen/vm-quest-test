@@ -1109,6 +1109,15 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       for (let k = 0, tk = t + 0.15; k < 7; k++, tk += rand(0.08, 0.4)) grit(tk, bus, rand(0.4, 1.1));
       noiseHit(t + 0.3, bus, 0.02, 'lowpass', 120, 0.7, 0.4, 2.2, 3);
     },
+    // the house crumbling somewhere else: loose plaster and grit trickling and falling, noise only
+    crumble(v = 0.6, pan = side() * rand(0.3, 0.9)) {
+      if (!ctx || ctx.state !== 'running' || !enabled) return;
+      const t = ctx.currentTime + rand(0.4, 1.1), bus = ctx.createGain(); bus.gain.value = v;
+      const p = panner(pan); if (p) { bus.connect(p); out(p, 0); } else out(bus, 0);
+      noiseHit(t, bus, 0.05, 'lowpass', rand(160, 260), 0.7, 0.5, 3, 4);
+      noiseHit(t + 0.2, bus, 0.03, 'bandpass', rand(700, 1100), 0.8, 0.3, 1.8, 2.4);
+      for (let k = 0, tk = t; k < 16; k++, tk += rand(0.05, 0.35)) grit(tk, bus, rand(0.5, 1.3));
+    },
     // access running out: three short buzzes (noise, no tone)
     alarm() {
       if (!ctx || ctx.state !== 'running' || !enabled) return;
@@ -1183,7 +1192,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 // The libraries and the scan are embedded (no network requests at all), so the
 // piece keeps working as long as this one file exists.
 (async function () {
-  const CONFIG = {"rooms": [{"file": "K01", "x": 12.7, "z": 8.55, "rot": 90, "floor": -1.35, "clip": [10.82, 5.95, 15.0, 10.61]}, {"file": "K02", "x": 16.53, "z": 8.49, "rot": 90, "floor": -1.2, "clip": [14.3, 5.95, 18.95, 10.61]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.68, 19.72, 16.47, 30.46]}, {"file": "R03", "x": 19.09, "z": 21.69, "rot": 270, "floor": -1.25, "clip": [15.77, 19.72, 23.61, 25.25]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.77, 24.55, 23.79, 30.46]}, {"file": "R04", "x": 28.98, "z": 27.53, "rot": 90, "floor": -1.75, "clip": [24.19, 24.55, 35.51, 30.46]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.55, 25.65, 43.95, 30.46]}, {"file": "R07", "x": 40.87, "z": 22.93, "rot": 0, "floor": -1.45, "clip": [36.85, 19.72, 43.95, 26.35]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.01, 39.75, 26.35]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [23.09, 22.75, 33.5, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [34.81, 25.65, 38.25, 30.46]}, {"file": "R08", "x": 36.02, "z": 16.79, "rot": 0, "floor": -1.2, "clip": [32.8, 19.72, 37.55, 24.71]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.15, 19.72, 33.5, 23.45]}], "plan": {"src": "grundriss.png", "pxPerM": 54.6}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": ["N01"]}};
+  const CONFIG = {"rooms": [{"file": "K01", "x": 12.7, "z": 8.55, "rot": 90, "floor": -1.35, "clip": [10.82, 5.95, 15.0, 10.61]}, {"file": "K02", "x": 16.53, "z": 8.49, "rot": 90, "floor": -1.2, "clip": [14.3, 5.95, 18.95, 10.61]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.68, 19.72, 16.47, 30.46]}, {"file": "R03", "x": 19.09, "z": 21.69, "rot": 270, "floor": -1.25, "clip": [15.77, 19.72, 23.61, 25.25]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.77, 24.55, 23.79, 30.46]}, {"file": "R04", "x": 30.72, "z": 27.48, "rot": 270, "floor": -1.75, "clip": [24.19, 24.55, 35.51, 30.46]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.55, 25.65, 43.95, 30.46]}, {"file": "R07", "x": 40.87, "z": 22.93, "rot": 0, "floor": -1.45, "clip": [36.85, 19.72, 43.95, 26.35]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.01, 39.75, 26.35]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [23.09, 22.75, 33.5, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [34.81, 25.65, 38.25, 30.46]}, {"file": "R08", "x": 36.02, "z": 16.79, "rot": 0, "floor": -1.2, "clip": [32.8, 19.72, 37.55, 24.71]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.15, 19.72, 33.5, 23.45]}], "plan": {"src": "grundriss.png", "pxPerM": 54.6, "ignore": [[20.5, 0, 47.7, 17.5]], "exit": [21.7, 20.0], "cellarDoor": [14.2, 12.0], "closedDoors": [[24.2, 30.0], [29.2, 20.0], [27.8, 23.1], [16.7, 26.6]], "notDoors": [[13.4, 11.3], [15.0, 11.3], [26.6, 20.8], [37.9, 25.2], [38.8, 25.2]], "extraDoors": [[13.7, 10.3, 0.65, "x"], [15.3, 10.3, 0.65, "x"]]}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": ["N01"]}};
 
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -1733,6 +1742,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // ---------- collision: stay inside the room ----------
   const RADIUS = CONFIG.radius || 0.22;
   const MAX_STEP = 0.18;
+  const BODY_HEIGHTS = [0.45, 0.6, 0.75, 0.9, 1.1, 1.35]; // knee to head: what you bump into
   let floorY = 0;
   const collider = new THREE.Raycaster();
   collider.firstHitOnly = true;
@@ -1748,17 +1758,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   function wallFree(dx, dz) {
     const len = Math.hypot(dx, dz);
     rayDir.set(dx / len, 0, dz / len);
-    // pushing on for a moment against a scan's wall: you slip through (the scans don't
-    // quite line up, a door may sit a little off); the house's outer walls stay solid
-    const soft = world.hard && blockedSince && performance.now() - blockedSince > 450;
-    for (const h of [floorY + 0.3, floorY + 0.7, cam.y - 0.3]) {
-      rayOrigin.set(cam.x, h, cam.z);
-      if (soft) { collider.set(rayOrigin, rayDir); collider.far = len + RADIUS; if (collider.intersectObject(world.hard, true).length) return false; continue; }
+    for (const h of BODY_HEIGHTS) {
+      rayOrigin.set(cam.x, floorY + h, cam.z);
       if (firstHit(len + RADIUS) < len + RADIUS) return false;
     }
     return true;
   }
-  let blockedSince = 0;
   function surfaceBelow(x, z) {
     rayOrigin.set(x, cam.y, z);
     rayDir.copy(DOWN);
@@ -1793,7 +1798,6 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     for (let i = 0; i < n; i++) {
       if (!tryStep(dx / n, dz / n) && !tryStep(dx / n, 0) && !tryStep(0, dz / n)) {
         ok = false;
-        if (!blockedSince) blockedSince = performance.now();
         const now = performance.now();
         if (now - bumpAt > 900) {
           bumpAt = now; bumpT = 0;
@@ -1802,7 +1806,6 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         break;
       }
     }
-    if (ok && (!world.hard || performance.now() - blockedSince > 900)) blockedSince = 0;
   }
 
   let lastWheel = 0;
@@ -1998,6 +2001,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // the scan has a hole; doors are the gaps in the drawing. And a floor everywhere
   // inside the house (invisible), so you can cross from one scan to the next.
   const collide = new THREE.Group(), hard = new THREE.Group();
+  let planGrid = null;
   await (async () => {
     const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = CONFIG.plan.src; });
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
@@ -2006,6 +2010,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const W = Math.ceil(img.width / k / cell), H = Math.ceil(img.height / k / cell), m = new Uint8Array(W * H);
     for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) {
       const i = (y * img.width + x) * 4;
+      if ((CONFIG.plan.ignore || []).some(([ax, az, bx, bz]) => x / k > ax && x / k < bx && y / k > az && y / k < bz)) continue; // buildings that were not scanned
       if (d[i] > 180 && d[i + 1] > 60 && d[i + 1] < 170 && d[i + 2] < 90) m[Math.floor(y / k / cell) * W + Math.floor(x / k / cell)] = 1;
     }
     // drop the room labels (orange boxes with white letters): separate blobs about a
@@ -2056,6 +2061,20 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         for (let k = 1; k < runs.length; k++) { const g = (runs[k][0] - runs[k - 1][1]) * cell; if (g >= 0.6 && g <= 1.8 && (runs[k][1] - runs[k][0]) * cell >= 0.25 && (runs[k - 1][1] - runs[k - 1][0]) * cell >= 0.25) doors.push({ x: (x + 0.5) * cell, z: (runs[k - 1][1] + runs[k][0]) / 2 * cell, w: g, along: 'z' }); }
       }
     }
+    window.__doorsRaw = doors.slice();
+    // doors that are not ways in this piece: closed like the wall around them, without a veil
+    const closedDoors = CONFIG.plan.closedDoors || [];
+    const isClosed = (d) => closedDoors.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < 0.7);
+    for (const d of doors) if (isClosed(d)) {
+      const ax = d.along === 'x' ? d.x - d.w / 2 - 0.05 : d.x - 0.12, bx = d.along === 'x' ? d.x + d.w / 2 + 0.05 : d.x + 0.12;
+      const az = d.along === 'x' ? d.z - 0.12 : d.z - d.w / 2 - 0.05, bz = d.along === 'x' ? d.z + 0.12 : d.z + d.w / 2 + 0.05;
+      for (let y = Math.floor(az / cell); y <= bz / cell; y++) for (let x = Math.floor(ax / cell); x <= bx / cell; x++) m[y * W + x] = 1;
+    }
+    // gaps the search finds that are no doors (the short marks beside a door), and the two
+    // cellar doors, too narrow in the drawing to be found
+    const near = (list, d) => list.some(([x, z]) => Math.hypot(d.x - x, d.z - z) < 0.7);
+    for (let i = doors.length - 1; i >= 0; i--) if (isClosed(doors[i]) || near(CONFIG.plan.notDoors || [], doors[i])) doors.splice(i, 1);
+    for (const [x, z, w, along] of CONFIG.plan.extraDoors || []) doors.push({ x, z, w, along });
     window.__doors = doors;
     // portals: in every doorway of the plan a veil of fine glowing dust, rising slowly
     // and twinkling, so the ways on can be seen from afar in the dark
@@ -2097,22 +2116,6 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       scene.add(portal);
       window.__portals = uniq.length; window.__portalDoors = uniq; window.__portalU = portal.material.uniforms;
     }
-    if (CONFIG.outerWallsOnly) {
-      // outside = what you reach from the edge of the plan without passing a wall, with
-      // the doors closed for this (walls thickened by 1 m); the outer walls are the
-      // wall cells right next to it
-      const G = 20, closed = new Uint8Array(W * H);
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y * W + x])
-        for (let j = -G; j <= G; j++) { const yy = y + j; if (yy < 0 || yy >= H) continue; for (let i = -G; i <= G; i++) { const xx = x + i; if (xx >= 0 && xx < W) closed[yy * W + xx] = 1; } }
-      const dist = new Int16Array(W * H).fill(-1); let front = [];
-      for (let x = 0; x < W; x++) for (const j of [x, (H - 1) * W + x]) if (!closed[j] && dist[j] < 0) { dist[j] = 0; front.push(j); }
-      for (let y = 0; y < H; y++) for (const j of [y * W, y * W + W - 1]) if (!closed[j] && dist[j] < 0) { dist[j] = 0; front.push(j); }
-      while (front.length) { const nx = []; for (const j of front) { const x = j % W; for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W]) if (n >= 0 && n < W * H && !closed[n] && dist[n] < 0) { dist[n] = 0; nx.push(n); } } front = nx; }
-      // grow from outside through anything for up to G + 8 cells: the outer walls lie in there
-      for (let j = 0; j < W * H; j++) if (dist[j] === 0) front.push(j);
-      for (let d = 1; d <= G + 8; d++) { const nx = []; for (const j of front) { const x = j % W; for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W]) if (n >= 0 && n < W * H && dist[n] < 0) { dist[n] = d; nx.push(n); } } front = nx; }
-      for (let j = 0; j < W * H; j++) if (m[j] && dist[j] < 0) m[j] = 0;
-    }
     // runs of wall cells -> boxes 2.6 m high
     const pos = [], idx = [];
     const box = (ax, az, bx, bz) => {
@@ -2125,15 +2128,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     bvh.computeBoundsTree.call(wg);
     const walls = new THREE.Mesh(wg, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })); walls.visible = false;
     const hb = new THREE.Box3().setFromObject(model);
-    const fg = new THREE.PlaneGeometry(hb.max.x - hb.min.x + 4, hb.max.z - hb.min.z + 4); fg.rotateX(-Math.PI / 2);
-    fg.translate((hb.min.x + hb.max.x) / 2, -0.02, (hb.min.z + hb.max.z) / 2);
+    const fg = new THREE.PlaneGeometry(W * cell, H * cell); fg.rotateX(-Math.PI / 2); // the whole plan: also around the house
+    fg.translate(W * cell / 2, -0.02, H * cell / 2);
     const floor = new THREE.Mesh(fg, new THREE.MeshBasicMaterial()); floor.visible = false;
     collide.add(walls, floor);
     hard.add(walls.clone(), floor.clone());
     if (CONFIG.outerWallsOnly) {
-      // what you bump into inside: each scan's walls and tall furniture (chest to head
-      // height: doorways stay open, the junk on the floor you wade through), only inside
-      // its own room
+      // what you bump into inside: each scan's walls and furniture from knee height up
+      // (low rubble on the floor stays walkable), only inside its own room
       const cp = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), N = new THREE.Vector3(), E = new THREE.Vector3();
       model.children.forEach((holder, ri) => {
         const r = CONFIG.rooms[ri], c = r.clip || [-1e9, -1e9, 1e9, 1e9], mg = 0.25;
@@ -2145,8 +2147,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
             B.fromBufferAttribute(p, idx ? idx.getX(t * 3 + 1) : t * 3 + 1).applyMatrix4(mw);
             C.fromBufferAttribute(p, idx ? idx.getX(t * 3 + 2) : t * 3 + 2).applyMatrix4(mw);
             const cx = (A.x + B.x + C.x) / 3, cy = (A.y + B.y + C.y) / 3, cz = (A.z + B.z + C.z) / 3;
-            if (cy < 1.15 || cy > 1.95 || cx < c[0] + mg || cx > c[2] - mg || cz < c[1] + mg || cz > c[3] - mg) continue;
-            N.subVectors(B, A).cross(E.subVectors(C, A)); const l = N.length(); if (!l || Math.abs(N.y / l) > 0.5) continue;
+            if (cy < 0.4 || cy > 1.95 || cx < c[0] + mg || cx > c[2] - mg || cz < c[1] + mg || cz > c[3] - mg) continue;
+            N.subVectors(B, A).cross(E.subVectors(C, A)); const l = N.length(); if (!l || Math.abs(N.y / l) > 0.8) continue;
             // a door of the plan: always open (the scans' own doors may sit a little off)
             if (doors.some((d) => d.along === 'x' ? Math.abs(cx - d.x) < d.w / 2 + 0.15 && Math.abs(cz - d.z) < 0.7 : Math.abs(cz - d.z) < d.w / 2 + 0.15 && Math.abs(cx - d.x) < 0.7)) continue;
             cp.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z);
@@ -2159,11 +2161,16 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       collide.add(sc);
     }
     collide.updateMatrixWorld(true); hard.updateMatrixWorld(true);
-    window.__walls = { geo: wg, W, H, cell, mask: m }; // for checking (local tool)
+    window.__walls = { geo: wg, W, H, cell, mask: m, scanTris: collide.children[2] ? collide.children[2].geometry.getAttribute('position').count / 3 : 0 }; // for checking (local tool)
+    planGrid = { W, H, cell, mask: m };
   })();
   const hbox = new THREE.Box3().setFromObject(model);
   const size = hbox.getSize(new THREE.Vector3());
   world = { minX: hbox.min.x, maxX: hbox.max.x, minZ: hbox.min.z, maxZ: hbox.max.z, model, collide, hard: CONFIG.outerWallsOnly ? hard : null };
+  if (planGrid) { // you may walk all around the house, up to the edge of the plan
+    const EDGE = 1;
+    Object.assign(world, { minX: EDGE, maxX: planGrid.W * planGrid.cell - EDGE, minZ: EDGE, maxZ: planGrid.H * planGrid.cell - EDGE });
+  }
   Object.assign(cam, CONFIG.start);
   // Eye height above the real floor at the start position.
   rayOrigin.set(cam.x, 1.0, cam.z);
@@ -2185,19 +2192,20 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // ---------- WebXR (Meta Quest): the head looks and carries the lamp, a controller walks and takes ----------
   // The HTML interface cannot be seen in a headset, so while in VR the same information is
   // drawn on panels in the room. ?xrsim shows these panels on a normal screen, for checking.
-  const AMBIENT_STEPS = [6, 3, 1.5, 0.75, 0]; // how much of the room shows outside the lamp
-  const AMBIENT_START = 1;
-  const WALK_DEAD = 0.15, TURN_ON = 0.7, TURN_OFF = 0.3, SNAP_TURN = Math.PI / 6;
-  const BTN_TRIGGER = 0, BTN_INVENTORY = 4, BTN_AMBIENT = 5;
+  const XR_AMBIENT = 0.75; // how much of the room shows outside the lamp (fixed, Iris: step 4 of the 5 tried)
+  const INVENTORY_AFTER_TAKE = 6, INVENTORY_REMIND = 90, INVENTORY_REMIND_SHOW = 6; // seconds
+  const WALK_DEAD = 0.15, TURN_DEAD = 0.2, TURN_SPEED = 1.0; // radians per second at full push
+  const BTN_TRIGGER = 0, BTN_INVENTORY = 4;
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
   const INSPECT_DISTANCE = 0.5, INSPECT_DROP = 0.05, INSPECT_SCALE = 1.5;
   const XR_SETTLE_FRAMES = 30;
-  const xrPose = { frames: 0, baseX: 0, baseZ: 0, turned: false, held: {}, ambient: AMBIENT_START };
+  const END_PLAN_WIDTH = 1.5, END_PLAN_DISTANCE = 2.2, END_PLAN_AMBIENT = 16;
+  const xrPose = { frames: 0, baseX: 0, baseZ: 0, held: {} };
   const xrUp = new THREE.Vector3(0, 1, 0), xrOffset = new THREE.Vector3(), xrFlat = new THREE.Vector3();
 
   const xrHud = (() => {
     let root = null, bannerP, inventoryP, inspectP, dot, hint, showInventory = false, endedLines = null;
-    let frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', bannerClear = 0;
+    let frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', peekT = 0, plan = null;
     function panel(w, h, metres) {
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
@@ -2233,7 +2241,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         R.list.forEach((s, k) => {
           const x = 170 + k * (SW + 10);
           g.lineWidth = 2; g.strokeStyle = s.state === 'stored' ? '#e1681c' : 'rgba(255,255,255,.3)'; g.strokeRect(x, y, SW, SH);
-          if (s.state === 'stored') { g.fillStyle = 'rgba(225,104,28,.45)'; g.fillRect(x, y, SW, SH); }
+          if (s.state === 'stored') {
+            g.fillStyle = 'rgba(225,104,28,.45)'; g.fillRect(x, y, SW, SH);
+            visitor.drawIcon(g, s, x, y, SW, SH);
+            if (s === visitor.latest) { g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeRect(x - 2, y - 2, SW + 4, SH + 4); }
+          }
           if (s.state === 'lost') { g.strokeStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.moveTo(x, y + SH); g.lineTo(x + SW, y); g.stroke(); }
         });
       });
@@ -2241,8 +2253,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       g.fillStyle = '#fff'; g.font = '34px "Courier New",monospace';
       g.fillText($('#siteLabel').textContent + $('#siteCond').textContent, 48, foot);
       g.fillText('SITE REMAINING ' + $('#siteRem').textContent, 48, foot + 46);
+      if (visitor && visitor.latest) { g.fillStyle = '#e1681c'; g.font = '30px "Courier New",monospace'; g.fillText(visitor.latestText.toUpperCase(), 48, foot + 92); }
       g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '26px Arial';
-      g.fillText(`${fps} Bilder/s · Umgebung ${xrPose.ambient + 1}/${AMBIENT_STEPS.length} (B/Y) · Inventar (A/X)`, 48, h - 24);
+      g.fillText(`${fps} Bilder/s · Inventar (A/X)`, 48, h - 24);
       inventoryP.tex.needsUpdate = true;
     }
     function drawInspect() {
@@ -2256,11 +2269,31 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       g.fillStyle = '#e1681c'; g.fillText('CONDITION: ' + lines[3].toUpperCase(), 30, 232);
       inspectP.tex.needsUpdate = true;
     }
+    function drawEndPlan() {
+      if (plan.done) return; plan.done = true;
+      const rt = new THREE.WebGLRenderTarget(2048, Math.round(2048 / plan.aspect));
+      const xrOn = renderer.xr.enabled, before = renderer.getRenderTarget();
+      root.visible = false; rig.visible = false; shared.uAmbK.value = END_PLAN_AMBIENT;
+      renderer.xr.enabled = false; renderer.setRenderTarget(rt); renderer.clear();
+      renderer.render(scene, plan.cam);
+      renderer.xr.enabled = xrOn; renderer.setRenderTarget(before);
+      root.visible = true; rig.visible = true;
+      scene.children.forEach((c) => { if (c !== root && c !== rig) c.visible = false; });
+      const w = END_PLAN_WIDTH, mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, w / plan.aspect), new THREE.ShaderMaterial({
+        uniforms: { map: { value: rt.texture } }, depthTest: false, depthWrite: false,
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(map, vUv).rgb, 1.0); }' }));
+      mesh.renderOrder = 999; mesh.position.set(-0.45, 0, 0); root.add(mesh);
+      xrFlat.set(viewDir.x, 0, viewDir.z).normalize();
+      root.position.copy(viewPos).addScaledVector(xrFlat, END_PLAN_DISTANCE); root.lookAt(viewPos);
+      inventoryP.mesh.position.set(0.68, 0, 0); inventoryP.mesh.visible = true; inspectP.mesh.visible = false; bannerP.mesh.visible = false;
+      dot.visible = false; hint.mesh.visible = false;
+    }
     return {
       build() {
         root = new THREE.Group(); scene.add(root);
-        bannerP = panel(1024, 200, 0.95); bannerP.mesh.position.set(0, 0.22, 0); root.add(bannerP.mesh);
-        inventoryP = panel(800, 900, 0.72); root.add(inventoryP.mesh);
+        bannerP = panel(1024, 200, 0.95); bannerP.mesh.position.set(0, 0.32, 0); root.add(bannerP.mesh);
+        inventoryP = panel(800, 960, 0.6); inventoryP.mesh.position.set(-0.34, -0.12, 0); root.add(inventoryP.mesh);
         inspectP = panel(760, 270, 0.5); inspectP.mesh.position.set(0, 0.42, 0); root.add(inspectP.mesh);
         dot = new THREE.Mesh(new THREE.RingGeometry(0.008, 0.012, 24), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }));
         dot.position.set(0, 0, -1.5); dot.renderOrder = 1000; camera.add(dot);
@@ -2273,21 +2306,24 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         if (title == null) { bannerP.mesh.visible = false; return; }
         drawBanner(title, sub, warn);
       },
-      flash(title) { this.banner(title); bannerClear = 1.4; },
+      peek(seconds) { peekT = Math.max(peekT, seconds); drawInventory(); },
+      get inventoryOpen() { return showInventory || peekT > 0; },
       near(on) { if (!dot) return; dot.material.color.setHex(on ? 0xe1681c : 0xffffff); dot.material.opacity = on ? 1 : 0.55; hint.mesh.visible = on; },
       toggleInventory() { showInventory = !showInventory; if (showInventory) drawInventory(); },
-      ended(lines) { endedLines = lines; showInventory = true; drawInventory(); },
+      // the end: the plan seen from above, drawn once onto a panel; everything else goes dark
+      ended(lines, planCam, aspect) { endedLines = lines; showInventory = true; drawInventory(); plan = { cam: planCam, aspect }; },
       update(dt) {
         if (!root) return;
         frames++; fpsT += dt;
         if (fpsT >= 1) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
         xrOffset.copy(viewPos).addScaledVector(viewDir, HUD_DISTANCE); // follows the gaze, also when looking at the floor
         if (root.position.lengthSq() === 0) root.position.copy(xrOffset); // the first frame: already in place
+        if (plan) { drawEndPlan(); return; }
         root.position.lerp(xrOffset, 1 - Math.exp(-dt * HUD_FOLLOW));
         root.lookAt(viewPos);
-        if (bannerClear > 0 && (bannerClear -= dt) <= 0) bannerP.mesh.visible = false;
+        if (peekT > 0) peekT -= dt;
         const inspecting = !!(visitor && visitor.inspecting);
-        inventoryP.mesh.visible = showInventory && !inspecting;
+        inventoryP.mesh.visible = (showInventory || peekT > 0) && !inspecting;
         inspectP.mesh.visible = inspecting;
         if (inspecting) drawInspect(); else inspectKey = '';
         if (inventoryP.mesh.visible && (drawT -= dt) <= 0) { drawT = 0.5; drawInventory(); }
@@ -2302,7 +2338,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     camera.position.set(0, CONFIG.eye, 0); camera.rotation.set(0, 0, 0);
     rig.rotation.y = XRSIM ? 0 : -cam.yaw;
     rig.position.set(cam.x, floorY, cam.z);
-    shared.uAmbK.value = AMBIENT_STEPS[AMBIENT_START];
+    shared.uAmbK.value = XR_AMBIENT;
     shared.uScale.value = XR_POINT_SCALE;
     if (XRSIM) return;
     navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] }).then(async (session) => {
@@ -2327,29 +2363,25 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if (Math.abs(y) > Math.abs(walk) && Math.abs(y) > WALK_DEAD) walk = y;
       if (Math.abs(x) > Math.abs(turn)) turn = x;
     }
-    const busy = visitor && visitor.inspecting;
+    const busy = visitor && (visitor.inspecting || visitor.debug.ended);
     xrFlat.set(viewDir.x, 0, viewDir.z);
     if (walk && !busy && xrFlat.lengthSq() > 1e-4) {
       xrFlat.normalize();
       const step = -walk * state.moveSpeed * dt;
       moveBy(xrFlat.x * step, xrFlat.z * step); lastWheel = now;
     }
-    if (!xrPose.turned && Math.abs(turn) > TURN_ON) {
-      xrPose.turned = true;
-      const a = -Math.sign(turn) * SNAP_TURN;
+    // stick sideways: the body turns smoothly around the head, faster the further it is pushed
+    const turnK = Math.max(0, (Math.abs(turn) - TURN_DEAD) / (1 - TURN_DEAD));
+    if (turnK && !busy) {
+      const a = -Math.sign(turn) * turnK * turnK * TURN_SPEED * dt;
       xrOffset.copy(rig.position).sub(viewPos).applyAxisAngle(xrUp, a);
       rig.position.copy(viewPos).add(xrOffset); rig.rotation.y += a;
-    } else if (xrPose.turned && Math.abs(turn) < TURN_OFF) xrPose.turned = false;
+    }
     xrPressed(pads, BTN_TRIGGER, 'take', () => {
       if (visitor && visitor.debug.ended) location.reload();
       else if (visitor && !busy) visitor.take();
     });
     xrPressed(pads, BTN_INVENTORY, 'inventory', () => xrHud.toggleInventory());
-    xrPressed(pads, BTN_AMBIENT, 'ambient', () => {
-      xrPose.ambient = (xrPose.ambient + 1) % AMBIENT_STEPS.length;
-      shared.uAmbK.value = AMBIENT_STEPS[xrPose.ambient];
-      xrHud.flash(`Umgebung ${xrPose.ambient + 1} / ${AMBIENT_STEPS.length}`);
-    });
   }
   // before the frame's movement: where the head is now
   function xrBegin(dt, now) {
@@ -2362,7 +2394,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         camera.getWorldPosition(viewPos); xrPose.baseX = cam.x; xrPose.baseZ = cam.z;
         return;
       }
-      cam.x = viewPos.x; cam.z = viewPos.z; // walking around physically moves the visitor too
+      // walking around physically moves the visitor too, but not through a wall: what the
+      // collision refuses, the rig takes back
+      const headX = viewPos.x, headZ = viewPos.z;
+      moveBy(headX - cam.x, headZ - cam.z);
+      rig.position.x += cam.x - headX; rig.position.z += cam.z - headZ;
+      camera.getWorldPosition(viewPos);
       cam.yaw = Math.atan2(viewDir.x, -viewDir.z); cam.pitch = Math.asin(clamp(viewDir.y, -1, 1));
     }
     xrPose.baseX = cam.x; xrPose.baseZ = cam.z;
@@ -2375,6 +2412,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     camera.getWorldPosition(viewPos); camera.getWorldDirection(viewDir);
   }
   if (XRSIM) addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'i' && !e.repeat) xrHud.toggleInventory(); });
+  if (XRSIM) window.__test = { cam, moveBy, get visitor() { return visitor; }, get floorY() { return floorY; } }; // for checking on the Mac only
 
   // ---------- VISITOR MODE: 48 material samples, an inventory, and a site that decays ----------
   // In every room lie 4 things of the house (a bent nail, a shard, a crown cap, a scrap of
@@ -2537,7 +2575,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         b.addEventListener('click', () => { if (s.state === 'stored' && !insp.s) openInspect(s, 'view'); }); grid.appendChild(b); });
     }
     const slotSvg = (s) => `<svg viewBox="0 0 28 15" aria-hidden="true"><rect x="1" y="1" width="26" height="13"/>${KINDS[s.kind].icon}</svg>`;
-    let got = 0, lostN = 0;
+    let got = 0, lostN = 0, latest = null, latestText = '', inventorySeen = 0;
+    const iconPath = KINDS.map((K) => (K.icon.match(/ d="([^"]+)"/) || [])[1]).map((d) => new Path2D(d));
+    function drawIcon(g, s, x, y, w, h) { // the placeholder's mark, until the photos of the real samples are in
+      const k = h / 15; g.save(); g.translate(x + (w - 28 * k) / 2, y); g.scale(k, k);
+      g.lineWidth = 1.1; g.lineCap = 'round'; g.strokeStyle = '#fff'; g.fillStyle = 'rgba(255,255,255,.7)';
+      if (/class="[fw]"/.test(KINDS[s.kind].icon)) g.fill(iconPath[s.kind]);
+      g.stroke(iconPath[s.kind]); g.restore();
+    }
     function log(text, warn) {
       if (!logEl) return;
       const d = document.createElement('div'); d.textContent = text; if (warn) d.className = 'warn';
@@ -2693,13 +2738,37 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       setTimeout(() => s.slot.classList.remove('new'), 1600);
       $('#invCount').textContent = `${String(got).padStart(2, '0')} / ${TOTAL}`;
       log(`SAMPLE ${s.id} / ${s.room.split(' ')[0]} CONSERVED`); say('stored', got);
-      // the gap: weak at first, stronger and wider the more has been taken
-      const k = got / TOTAL;
-      addMark(s.x, s.y, s.z, 0.32 + 1.0 * Math.pow(Math.min(1, got / 14), 1.1), 1.3 + 3.6 * k, true);
-      debris(s.x, s.y, s.z, 1.3 + 3.6 * k, 1 + got / 10);
+      latest = s; latestText = `${KINDS[s.kind].name} / ${s.id} / ${s.room.split(' ')[0]}`;
+      if (xrActive) { xrHud.peek(INVENTORY_AFTER_TAKE); inventorySeen = shared.uTime.value; }
+      // the gap does not open here but somewhere else, usually behind you: you hear it go
+      // and may only find it later. Only the dust falls where the sample lay.
+      const k = got / TOTAL, reach = 1.3 + 3.6 * k;
+      debris(s.x, s.y, s.z, reach, 1 + got / 10);
+      const site = elsewhere(reach);
+      addMark(site.x, site.y, site.z, 0.32 + 1.0 * Math.pow(Math.min(1, got / 14), 1.1), reach, true);
+      debris(site.x, site.y, site.z, reach, 1 + got / 10);
+      const dist = Math.hypot(site.x - viewPos.x, site.z - viewPos.z) || 1;
+      say('crumble', clamp(1.1 - dist / 22, 0.45, 1), clamp(((site.x - viewPos.x) * -viewDir.z + (site.z - viewPos.z) * viewDir.x) / dist, -0.9, 0.9));
       decayBase = 0.85 * Math.pow(Math.max(0, k - 0.04) / 0.96, 1.15); // everywhere too, from the 3rd sample on
       consequence();
       directiveEvent('take', s);
+    }
+    // where a take is paid for: out of sight and out of reach of the visitor, often a door or
+    // another sample, so that ways and things go missing in the course of the visit
+    const ELSEWHERE_MIN = 4, ELSEWHERE_MAX = 16, ELSEWHERE_TARGET_SHARE = 0.6, ELSEWHERE_TRIES = 40;
+    function elsewhere(reach) {
+      const flat = Math.hypot(viewDir.x, viewDir.z) || 1, fx = viewDir.x / flat, fz = viewDir.z / flat;
+      const minD = Math.min(Math.max(ELSEWHERE_MIN, reach + 1.5), ELSEWHERE_MAX - 4);
+      const targets = [...doorsP.filter((d, i) => !shut.has(i) && !lastingDoor(d)).map((d) => ({ x: d.x, y: 1, z: d.z })), ...samples.filter((q) => q.state === 'here')];
+      const pool = targets.length && Math.random() < ELSEWHERE_TARGET_SHARE ? targets
+        : Array.from({ length: ELSEWHERE_TRIES }, () => { const q = survey[Math.floor(Math.random() * survey.length)]; return { x: q[0], y: q[1], z: q[2] }; });
+      let best = pool[0], bestScore = -Infinity;
+      for (const q of pool) {
+        const dx = q.x - cam.x, dz = q.z - cam.z, d = Math.hypot(dx, dz) || 1, behind = -(dx * fx + dz * fz) / d;
+        const score = (d < minD ? -5 : 0) + (d > ELSEWHERE_MAX ? -1 : 0) + behind * 2 + Math.random();
+        if (score > bestScore) { bestScore = score; best = q; }
+      }
+      return best;
     }
     // what follows a take: at first a stutter of the lamp, later the house answers
     let lightK = 1, lightScript = [], lightSeg = null;
@@ -2709,14 +2778,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         lightScript = [{ v: 0.3, d: 0.08 }, { v: 1, d: 0.12 }, { v: 0.12, d: 0.6 + Math.random() * 0.8, dark: true }, { v: 0.5, d: 0.06 }, { v: 0, d: 0.3 }, { v: 1, d: 0.4 }];
       } else if (got >= 2 && r < 0.75) {
         lightScript = [{ v: 0.2, d: 0.07 }, { v: 1, d: 0.15 }, { v: 0.1, d: 0.1 }, { v: 1, d: 0.3 }];
-        if (Math.random() < 0.6) say('collapse', 0.35 + Math.random() * 0.3);
-      } else if (got >= 1 && Math.random() < 0.5) say('collapse', 0.25); // no knocking after a take
+        if (Math.random() < 0.6) say('crumble', 0.35 + Math.random() * 0.3);
+      } else if (got >= 1 && Math.random() < 0.5) say('crumble', 0.25); // no knocking after a take
     }
     function lightTick(dt) {
       if (!lightSeg && lightScript.length) {
         lightSeg = { ...lightScript.shift(), t: 0 }; say('flicker', 0.6);
         if (lightSeg.dark) { // in the dark: something falls in, the gaps jump on
-          setTimeout(() => say('collapse', 0.4), 300);
+          setTimeout(() => say('crumble', 0.4), 300);
           for (const m of marks) if (m.take) { m.rTo += 0.5; m.r += 0.4; }
           decayCreep = Math.min(0.3, decayCreep + 0.03);
           const R = roomAt(cam.x, cam.z); setTimeout(() => { log(`STRUCTURAL LOSS${R ? ' / ' + R.code.split(' ')[0] : ''}`, true); banner('Structural loss', R ? R.code.split(' ')[0] : '', true); }, (lightSeg.d + 0.6) * 1000);
@@ -2865,6 +2934,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     });
     const trail = []; let trailT = 0;
     const doorsP = window.__portalDoors || [], shut = new Set();
+    const sameDoor = (d, p) => p && Math.hypot(d.x - p[0], d.z - p[1]) < 0.7;
+    const lastingDoor = (d) => sameDoor(d, CONFIG.plan.exit) || sameDoor(d, CONFIG.plan.cellarDoor); // the way out and into the cellar stay
+    // the visitor's room keeps at least one way out
+    function trapsVisitor(d) {
+      const R = roomAt(cam.x, cam.z); if (!R) return false;
+      const m = 0.5, inR = (q) => q.x > R.c[0] - m && q.x < R.c[2] + m && q.z > R.c[1] - m && q.z < R.c[3] + m;
+      return inR(d) && doorsP.filter((q, k) => !shut.has(k) && inR(q)).length <= 1;
+    }
     function collapseDoor(i) {
       const d = doorsP[i]; shut.add(i);
       if (window.__portalU) window.__portalU.uShut.value[i] = 1;
@@ -2877,16 +2954,108 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         pos[k * 3] = d.x + (Math.random() - 0.5) * bx * (1.2 - y * 0.15); pos[k * 3 + 1] = y; pos[k * 3 + 2] = d.z + (Math.random() - 0.5) * bz * (1.2 - y * 0.15); }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x5c554c, size: 0.014 })));
-      debris(d.x, 0, d.z, w, 1.5); say('collapse', 1); setTimeout(() => say('lost'), 250);
+      debris(d.x, 0, d.z, w, 1.5); say('crumble', 1); setTimeout(() => say('lost'), 250);
       const R = roomAt(d.x + (d.along === 'x' ? 0 : 0.6), d.z + (d.along === 'x' ? 0.6 : 0)) || roomAt(d.x, d.z);
       log('ROUTE COLLAPSED' + (R ? ' / ' + short(R.code) : ''), true); banner('Route collapsed', 'this way is gone', true);
     }
     let doorWait = 0;
     function doorsTick() {
       if (got < 3 || (doorWait -= 0.5) > 0) return; // called every 0.5 s; at most one way every ~25 s
-      const i = doorsP.findIndex((d, i) => !shut.has(i) && Math.hypot(cam.x - d.x, cam.z - d.z) > 1.1
+      const i = doorsP.findIndex((d, i) => !shut.has(i) && !lastingDoor(d) && !trapsVisitor(d) && Math.hypot(cam.x - d.x, cam.z - d.z) > 1.1
         && remainAt(d.x, 1.0, d.z) < -0.1 && remainAt(d.x, 0.2, d.z) < -0.05 && remainAt(d.x, 1.8, d.z) < -0.05);
       if (i >= 0) { collapseDoor(i); doorWait = 25; }
+    }
+    // --- dust on the ground outside: the way to the cellar, and after a while the way back in ---
+    // like the veils in the doors, but lying flat
+    const DUST_PER_M = 700, DUST_HALF_WIDTH = 0.38, DUST_HEIGHT = 0.1;
+    const dustMat = () => new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime: shared.uTime, uStrength: { value: CONFIG.portals || 0.9 }, uAlpha: { value: 1 } },
+      vertexShader: `attribute float aSeed; uniform float uTime; varying float vA;
+        void main(){ vec3 p = position;
+          p.y = mod(p.y + uTime * (0.004 + aSeed * 0.012), ${DUST_HEIGHT.toFixed(2)});
+          p.x += sin(uTime * 0.5 + aSeed * 30.0) * 0.012; p.z += cos(uTime * 0.4 + aSeed * 21.0) * 0.012;
+          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
+          gl_PointSize = clamp(14.0 / -mv.z, 1.0, 5.0);
+          vA = 0.5 + 0.5 * sin(uTime * (1.2 + aSeed * 2.5) + aSeed * 50.0); }`,
+      fragmentShader: `uniform float uStrength, uAlpha; varying float vA;
+        void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c); if (r > 0.25) discard;
+          float a = (1.0 - r * 4.0) * vA * uStrength * uAlpha; gl_FragColor = vec4(vec3(1.0, 0.94, 0.82) * a, 1.0); }` });
+    function dustAlong(line, mesh) {
+      const P = [], S = [];
+      for (let i = 1; i < line.length; i++) {
+        const [ax, az] = line[i - 1], [bx, bz] = line[i], len = Math.hypot(bx - ax, bz - az); if (!len) continue;
+        for (let k = Math.round(len * DUST_PER_M); k > 0; k--) {
+          const t = Math.random(), off = (Math.random() - Math.random()) * DUST_HALF_WIDTH;
+          P.push(ax + (bx - ax) * t - (bz - az) / len * off, Math.random() * DUST_HEIGHT, az + (bz - az) * t + (bx - ax) / len * off); S.push(Math.random());
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aSeed', new THREE.Float32BufferAttribute(S, 1));
+      if (mesh) { mesh.geometry.dispose(); mesh.geometry = g; return mesh; }
+      const pts = new THREE.Points(g, dustMat()); pts.frustumCulled = false; pts.renderOrder = 11; scene.add(pts); return pts;
+    }
+    // how far every spot outside is from the way in (keeping off the walls)
+    const CLEARANCE = 0.6, RETURN_AFTER = 45, RETURN_REDRAW = 5, RETURN_MOVED = 4, WAY_STEP = 6; // WAY_STEP: cells between trail points
+    const HOUSE = [3.5, 19.9, 44, 30.6], CELLAR = [10.7, 5.9, 18.9, 12.4];
+    const inBox = (b, x, z) => x > b[0] && x < b[2] && z > b[1] && z < b[3];
+    const way = (() => {
+      const exit = CONFIG.plan.exit; if (!planGrid || !exit) return null;
+      const { W, H, cell, mask } = planGrid, R = Math.ceil(CLEARANCE / cell), wall = new Uint8Array(W * H), dist = new Int32Array(W * H).fill(-1);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x])
+        for (let j = -R; j <= R; j++) { const yy = y + j; if (yy < 0 || yy >= H) continue; for (let i = -R; i <= R; i++) { const xx = x + i; if (xx >= 0 && xx < W) wall[yy * W + xx] = 1; } }
+      const idx = (x, z) => Math.floor(z / cell) * W + Math.floor(x / cell);
+      const start = idx(exit[0], exit[1] - 0.8);
+      let front = [start]; dist[start] = 0;
+      for (let d = 1; front.length; d++) {
+        const nx = [];
+        for (const j of front) { const x = j % W; for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W]) if (n >= 0 && n < W * H && !wall[n] && dist[n] < 0) { dist[n] = d; nx.push(n); } }
+        front = nx;
+      }
+      // from any spot outside, along the falling distance, to the door; returned smoothed
+      function from(x, z) {
+        let j = idx(x, z), bd = -1;
+        if (dist[j] < 0) { // right beside a wall: the nearest spot that counts
+          const r0 = Math.ceil(2 / cell), x0 = j % W, y0 = (j / W) | 0; let bestD = Infinity;
+          for (let b = -r0; b <= r0; b++) for (let a = -r0; a <= r0; a++) { const n = (y0 + b) * W + x0 + a; if (n >= 0 && n < W * H && dist[n] >= 0 && a * a + b * b < bestD) { bestD = a * a + b * b; bd = n; } }
+          if (bd < 0) return null; j = bd;
+        }
+        const raw = [];
+        while (dist[j] > 0) {
+          raw.push([(j % W + 0.5) * cell, (Math.floor(j / W) + 0.5) * cell]);
+          let next = j; const x = j % W;
+          for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W, x > 0 ? j - W - 1 : -1, x < W - 1 ? j - W + 1 : -1, x > 0 ? j + W - 1 : -1, x < W - 1 ? j + W + 1 : -1])
+            if (n >= 0 && n < W * H && dist[n] >= 0 && dist[n] < dist[next]) next = n;
+          if (next === j) break; j = next;
+        }
+        raw.push([exit[0], exit[1] - 0.8]);
+        const line = raw.filter((_, i) => i % WAY_STEP === 0); line.push(raw[raw.length - 1]);
+        for (let pass = 0; pass < 3; pass++) for (let i = 1; i < line.length - 1; i++) line[i] = [(line[i - 1][0] + line[i][0] * 2 + line[i + 1][0]) / 4, (line[i - 1][1] + line[i][1] * 2 + line[i + 1][1]) / 4];
+        return line;
+      }
+      return { from };
+    })();
+    if (way && CONFIG.plan.cellarDoor) {
+      const [cx, cz] = CONFIG.plan.cellarDoor, line = way.from(cx, cz + 0.8);
+      if (line) dustAlong([[cx, cz + 0.1], ...line, [CONFIG.plan.exit[0], CONFIG.plan.exit[1] - 0.1]]);
+      window.__cellarTrail = line;
+    }
+    let outsideT = 0, backTrail = null, backDraw = 0, backFrom = null, backAlpha = 0;
+    function wayBackTick(dt) {
+      if (!way) return;
+      const outside = !inBox(HOUSE, cam.x, cam.z) && !inBox(CELLAR, cam.x, cam.z);
+      outsideT = outside ? outsideT + dt : 0;
+      const showing = outsideT > RETURN_AFTER;
+      if (showing && (backDraw -= dt) <= 0) {
+        backDraw = RETURN_REDRAW;
+        if (!backFrom || Math.hypot(cam.x - backFrom[0], cam.z - backFrom[1]) > RETURN_MOVED) {
+          const line = way.from(cam.x, cam.z);
+          if (line) { backTrail = dustAlong(line, backTrail); backFrom = [cam.x, cam.z]; }
+        }
+      }
+      backAlpha += ((showing ? 1 : 0) - backAlpha) * Math.min(1, dt * 0.5);
+      if (backTrail) { backTrail.material.uniforms.uAlpha.value = backAlpha; backTrail.visible = backAlpha > 0.01; }
+      if (!outside) backFrom = null;
     }
     // the interface breaks up too, more often the less is left
     let hudT = 30;
@@ -2898,12 +3067,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     }
     function revealPlan() {
       // from above, cut at 1.25 m: what is left of the house, where the samples were, the way you went
-      const cx = (world.minX + world.maxX) / 2, cz = (world.minZ + world.maxZ) / 2, a = canvas.clientWidth / canvas.clientHeight;
-      let hw = (world.maxX - world.minX) / 2 * 1.08, hh = (world.maxZ - world.minZ) / 2 * 1.08;
-      if (hw / hh < a * 0.6) hw = hh * a * 0.6; else hh = hw / (a * 0.6);
-      const W = hh * a; // the plan in the left 60 % of the screen
+      const clips = CONFIG.rooms.map((r) => r.clip), left = Math.min(...clips.map((c) => c[0])), right = Math.max(...clips.map((c) => c[2])), top = Math.min(...clips.map((c) => c[1])), bottom = Math.max(...clips.map((c) => c[3]));
+      const cx = (left + right) / 2, cz = (top + bottom) / 2, a = canvas.clientWidth / canvas.clientHeight;
+      let hw = (right - left) / 2 * 1.04, hh = (bottom - top) / 2 * 1.04;
+      if (!xrActive) { if (hw / hh < a * 0.6) hw = hh * a * 0.6; else hh = hw / (a * 0.6); }
+      const W = xrActive ? hw : hh * a; // on a screen the plan in the left 60 %; in VR it has a panel of its own
+      const shift = xrActive ? 0 : W - hw;
       const oc = new THREE.OrthographicCamera(-W, W, hh, -hh, 0.01, 4);
-      oc.position.set(cx + (W - hw), 1.25, cz); oc.up.set(0, 0, -1); oc.lookAt(cx + (W - hw), 0, cz);
+      oc.position.set(cx + shift, 1.25, cz); oc.up.set(0, 0, -1); oc.lookAt(cx + shift, 0, cz);
       const mark = (s) => {
         const col = s.state === 'stored' ? 0xe1681c : s.state === 'lost' ? 0x777777 : 0xffffff, m = new THREE.MeshBasicMaterial({ color: col });
         if (s.state === 'lost') { for (const r of [0.785, -0.785]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.01, 0.05), m); b.position.set(s.x, 1.1, s.z); b.rotation.y = r; scene.add(b); } }
@@ -2916,7 +3087,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xe1681c, transparent: true, opacity: 0.55 })));
       }
       falls.forEach((f) => (f.pts.visible = false));
+      scene.traverse((o) => { if (o.isPoints && o.material.uniforms && o.material.uniforms.uStrength) o.visible = false; }); // no veils or dust trail on the plan
       shared.uSpotOn.value = 0; shared.uBeamRadius.value = 1e5; lightK = 1;
+      if (xrActive) return { cam: oc, aspect: hw / hh };
       stage.classList.add('ending');
       topCam = oc;
     }
@@ -2935,10 +3108,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       $('#endTable').innerHTML = '<tr><th>Session</th><th>Samples</th><th>Site remaining</th></tr>' +
         all.slice(-7).map((x) => `<tr class="${x === me ? 'me' : ''}"><td>${String(x.n).padStart(3, '0')}</td><td>${x.got} / ${TOTAL}</td><td>${x.rem} %</td></tr>`).join('') +
         `<tr><td colspan="3">Collective record ${seen.size} / ${TOTAL} samples conserved — ${all.length} sessions</td></tr>`;
-      say('collapse', 0.7);
+      say('crumble', 0.7);
       setTimeout(() => {
-        if (xrActive) { // VR: a panel in the room instead of the plan seen from above (that follows later)
-          xrHud.ended([title, `Time on site ${mm(onSite)}`, `Samples conserved ${got} / ${TOTAL}`, `Samples lost ${lostN}`, `Routes collapsed ${shut.size}`, `Site remaining ${Math.round(remaining * 100)} %`, got ? `${got} preserved. ${removed} % removed.` : 'Nothing taken. The site remains.', 'Trigger: new visit']);
+        if (xrActive) { // VR: the plan seen from above and the numbers on panels
+          const plan = revealPlan();
+          xrHud.ended([title, `Time on site ${mm(onSite)}`, `Samples conserved ${got} / ${TOTAL}`, `Samples lost ${lostN}`, `Routes collapsed ${shut.size}`, `Site remaining ${Math.round(remaining * 100)} %`, got ? `${got} preserved. ${removed} % removed.` : 'Nothing taken. The site remains.', 'Trigger: new visit'], plan.cam, plan.aspect);
           return;
         }
         revealPlan(); $('#ended').classList.add('on');
@@ -2998,7 +3172,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         }
         lightTick(dt); fallTick(dt);
         if (entered && !ended) {
-          lookTick(dt); surveyTick(dt); directiveTick(dt); detectTick(dt); accessTick(dt); hudTick(dt);
+          lookTick(dt); surveyTick(dt); directiveTick(dt); detectTick(dt); accessTick(dt); hudTick(dt); wayBackTick(dt);
+          if (xrActive) { // long nothing taken: the inventory comes back for a moment
+            if (xrHud.inventoryOpen || insp.s) inventorySeen = shared.uTime.value;
+            else if (shared.uTime.value - inventorySeen > INVENTORY_REMIND) xrHud.peek(INVENTORY_REMIND_SHOW);
+          }
           if ((trailT -= dt) <= 0) { trailT = 0.5; const l = trail[trail.length - 1]; if (!l || Math.hypot(l[0] - cam.x, l[1] - cam.z) > 0.3) trail.push([cam.x, cam.z]); }
         }
         const cur = roomAt(cam.x, cam.z);
@@ -3007,7 +3185,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         if (a !== near) { near = a; reticle.classList.toggle('near', a); hint.classList.toggle('on', a); if (xrActive) xrHud.near(a); }
         if (a) { hint.style.left = pointer.x + 'px'; hint.style.top = pointer.y + 'px'; }
       },
-      take: pickUp, get inspecting() { return !!insp.s; },
+      take: pickUp, get inspecting() { return !!insp.s; }, drawIcon, get latest() { return latest; }, get latestText() { return latestText; },
       get got() { return got; }, get remaining() { return remaining; }, marks, samples, ROOMS,
       get debug() { return { dir, dirWait, dirN, ended, entered, scanT }; },
       testStore(s) { s.state = 'inspect'; s.g.visible = false; store(s); }, // for testing only
@@ -3450,6 +3628,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       camera.rotation.y = -cam.yaw;
       camera.rotation.x = cam.pitch - jolt * 0.03;
       viewPos.copy(camera.position);
+      viewDir.set(Math.sin(cam.yaw), 0, -Math.cos(cam.yaw));
     }
     if (visitor) visitor.tick(dt);
     if (VR && entered && !recording && !vrCal) vrSwitch(dt);
