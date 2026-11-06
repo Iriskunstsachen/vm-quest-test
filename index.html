@@ -2000,6 +2000,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // the walls of the floor plan (invisible): you can't walk through a wall, even where
   // the scan has a hole; doors are the gaps in the drawing. And a floor everywhere
   // inside the house (invisible), so you can cross from one scan to the next.
+  const VEIL_SEEN_NEAR = 3.5, VEIL_SEEN_FAR = 8;
   const collide = new THREE.Group(), hard = new THREE.Group();
   let planGrid = null;
   await (async () => {
@@ -2106,7 +2107,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
             gl_Position = projectionMatrix * mv;
             gl_PointSize = clamp(14.0 / -mv.z, 1.0, 5.0);
             float tw = 0.5 + 0.5 * sin(uTime * (1.5 + aSeed * 3.0) + aSeed * 50.0);
-            vA = tw * smoothstep(0.0, 0.25, p.y) * (1.0 - smoothstep(1.7, 2.1, p.y)) * (1.0 - uShut[int(aDoor + 0.5)]); // VISITOR MODE: a collapsed door has none
+            float near = 1.0 - smoothstep(${VEIL_SEEN_NEAR.toFixed(1)}, ${VEIL_SEEN_FAR.toFixed(1)}, length(mv.xyz)); // seen only from close by
+            vA = near * tw * smoothstep(0.0, 0.25, p.y) * (1.0 - smoothstep(1.7, 2.1, p.y)) * (1.0 - uShut[int(aDoor + 0.5)]); // VISITOR MODE: a collapsed door has none
           }`,
         fragmentShader: `uniform float uStrength; varying float vA;
           void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c); if (r > 0.25) discard;
@@ -2199,12 +2201,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
   const INSPECT_DISTANCE = 0.5, INSPECT_DROP = 0.05, INSPECT_SCALE = 1.5;
   const XR_SETTLE_FRAMES = 30;
+  const CORNER_WIDTH = 0.3, CORNER_X = -0.42, CORNER_Y = 0.34, HINT_ABOVE = 0.24, HINT_SIZE_AT = 1.5;
   const END_PLAN_WIDTH = 1.5, END_PLAN_DISTANCE = 2.2, END_PLAN_AMBIENT = 16;
   const xrPose = { frames: 0, baseX: 0, baseZ: 0, held: {} };
   const xrUp = new THREE.Vector3(0, 1, 0), xrOffset = new THREE.Vector3(), xrFlat = new THREE.Vector3();
 
   const xrHud = (() => {
-    let root = null, bannerP, inventoryP, inspectP, dot, hint, showInventory = false, endedLines = null;
+    let root = null, bannerP, inventoryP, inspectP, dot, hint, corner, cornerText = '', nearSample = null, showInventory = false, endedLines = null;
     let frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', peekT = 0, plan = null;
     function panel(w, h, metres) {
       const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -2214,13 +2217,21 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       mesh.renderOrder = 1000; mesh.visible = false;
       return { mesh, tex, g: c.getContext('2d'), w, h };
     }
+    function drawHand(g, cx, cy) { // an open hand, plain white
+      g.save(); g.fillStyle = '#fff'; g.shadowColor = '#000'; g.shadowBlur = 10; g.translate(cx, cy);
+      const bar = (x, y, w, h) => { g.beginPath(); g.roundRect(x, y, w, h, w / 2); g.fill(); };
+      bar(-26, -14, 58, 62);
+      [[-26, -46], [-11, -60], [4, -56], [19, -44]].forEach(([x, top]) => bar(x, top, 13, 50 - top - 14 + 8));
+      g.save(); g.translate(32, 14); g.rotate(0.75); bar(-6, -46, 13, 52); g.restore();
+      g.restore();
+    }
     function drawBanner(title, sub, warn) {
       const { g, w, h } = bannerP;
       g.clearRect(0, 0, w, h); g.textAlign = 'center';
       g.shadowColor = '#000'; g.shadowBlur = 18;
       g.fillStyle = warn ? '#e1681c' : '#fff'; g.font = 'bold 64px Arial';
-      g.fillText(String(title).toUpperCase(), w / 2, 92);
-      if (sub) { g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '30px "Courier New",monospace'; g.fillText(String(sub).toUpperCase(), w / 2, 150); }
+      g.fillText(String(title).toUpperCase(), w / 2, 92, w - 40);
+      if (sub) { g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '30px "Courier New",monospace'; g.fillText(String(sub).toUpperCase(), w / 2, 150, w - 40); }
       bannerP.tex.needsUpdate = true; bannerP.mesh.visible = true;
     }
     function drawInventory() {
@@ -2287,7 +2298,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       xrFlat.set(viewDir.x, 0, viewDir.z).normalize();
       root.position.copy(viewPos).addScaledVector(xrFlat, END_PLAN_DISTANCE); root.lookAt(viewPos);
       inventoryP.mesh.position.set(0.68, 0, 0); inventoryP.mesh.visible = true; inspectP.mesh.visible = false; bannerP.mesh.visible = false;
-      dot.visible = false; hint.mesh.visible = false;
+      dot.visible = false; hint.mesh.visible = false; corner.mesh.visible = false;
     }
     return {
       build() {
@@ -2297,9 +2308,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         inspectP = panel(760, 270, 0.5); inspectP.mesh.position.set(0, 0.42, 0); root.add(inspectP.mesh);
         dot = new THREE.Mesh(new THREE.RingGeometry(0.008, 0.012, 24), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }));
         dot.position.set(0, 0, -1.5); dot.renderOrder = 1000; camera.add(dot);
-        hint = panel(640, 80, 0.42); hint.mesh.position.set(0, -0.08, -1.5); camera.add(hint.mesh);
-        hint.g.textAlign = 'center'; hint.g.font = '38px "Courier New",monospace'; hint.g.shadowColor = '#000'; hint.g.shadowBlur = 10; hint.g.fillStyle = '#fff';
-        hint.g.fillText('TAKE SAMPLE', 320, 52); hint.tex.needsUpdate = true;
+        // above the sample in reach: a hand and what to do
+        hint = panel(640, 180, 0.4); scene.add(hint.mesh);
+        drawHand(hint.g, 92, 92);
+        hint.g.textAlign = 'left'; hint.g.shadowColor = '#000'; hint.g.shadowBlur = 10; hint.g.fillStyle = '#fff';
+        hint.g.font = 'bold 44px Arial'; hint.g.fillText('TAKE SAMPLE', 180, 82);
+        hint.g.font = '32px "Courier New",monospace'; hint.g.fillText('PRESS TRIGGER', 180, 128); hint.tex.needsUpdate = true;
+        // the time and the count, small, in a corner of the view
+        corner = panel(420, 64, CORNER_WIDTH); corner.mesh.position.set(CORNER_X, CORNER_Y, -1.5); camera.add(corner.mesh);
       },
       banner(title, sub, warn) {
         if (!bannerP) return;
@@ -2308,7 +2324,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       },
       peek(seconds) { peekT = Math.max(peekT, seconds); drawInventory(); },
       get inventoryOpen() { return showInventory || peekT > 0; },
-      near(on) { if (!dot) return; dot.material.color.setHex(on ? 0xe1681c : 0xffffff); dot.material.opacity = on ? 1 : 0.55; hint.mesh.visible = on; },
+      near(s) { if (!dot) return; nearSample = s; dot.material.color.setHex(s ? 0xe1681c : 0xffffff); dot.material.opacity = s ? 1 : 0.55; hint.mesh.visible = !!s; },
       toggleInventory() { showInventory = !showInventory; if (showInventory) drawInventory(); },
       // the end: the plan seen from above, drawn once onto a panel; everything else goes dark
       ended(lines, planCam, aspect) { endedLines = lines; showInventory = true; drawInventory(); plan = { cam: planCam, aspect }; },
@@ -2319,6 +2335,18 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         xrOffset.copy(viewPos).addScaledVector(viewDir, HUD_DISTANCE); // follows the gaze, also when looking at the floor
         if (root.position.lengthSq() === 0) root.position.copy(xrOffset); // the first frame: already in place
         if (plan) { drawEndPlan(); return; }
+        if (nearSample) { // stays the same size to the eye, whatever the distance
+          hint.mesh.position.copy(nearSample.g.position); hint.mesh.position.y += HINT_ABOVE;
+          hint.mesh.scale.setScalar(viewPos.distanceTo(hint.mesh.position) / HINT_SIZE_AT);
+          hint.mesh.lookAt(viewPos);
+        }
+        const nowText = `${$('#accessT').textContent}   ${$('#invCount').textContent}`;
+        corner.mesh.visible = entered;
+        if (nowText !== cornerText) {
+          cornerText = nowText; const c = corner;
+          c.g.clearRect(0, 0, c.w, c.h); c.g.textAlign = 'left'; c.g.shadowColor = '#000'; c.g.shadowBlur = 8; c.g.fillStyle = 'rgba(255,255,255,.75)'; c.g.font = '40px "Courier New",monospace';
+          c.g.fillText(nowText, 6, 46); c.tex.needsUpdate = true;
+        }
         root.position.lerp(xrOffset, 1 - Math.exp(-dt * HUD_FOLLOW));
         root.lookAt(viewPos);
         if (peekT > 0) peekT -= dt;
@@ -2666,7 +2694,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
     // --- taking ---
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), occl = new THREE.Raycaster(); occl.firstHitOnly = true;
-    const REACH = 2.6, AIM_SCREEN = 0.13, AIM_HEAD = 0.25;
+    const REACH = 2.6, AIM_SCREEN = 0.13, AIM_HEAD = 0.25, SAMPLE_SEEN_NEAR = 2.6, SAMPLE_SEEN_FAR = 5;
     function aimFrom(r) {
       if (xrActive) { r.ray.origin.copy(viewPos); r.ray.direction.copy(viewDir); return; }
       ndc.set(pointer.x / canvas.clientWidth * 2 - 1, -(pointer.y / canvas.clientHeight) * 2 + 1);
@@ -2696,8 +2724,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // big messages in the middle of the screen, one after another
     const bannerEl = $('#banner'), banners = [];
     let bannerBusy = false;
-    function banner(title, sub = '', warn = false) {
-      banners.push({ title, sub, warn }); if (!bannerBusy) nextBanner();
+    function banner(title, sub = '', warn = false, hold = 0) {
+      banners.push({ title, sub, warn, hold }); if (!bannerBusy) nextBanner();
     }
     function nextBanner() {
       const b = banners.shift(); if (!b || !bannerEl) { bannerBusy = false; return; }
@@ -2706,7 +2734,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       bannerEl.innerHTML = `<div class="bt">${b.title}</div>${b.sub ? `<div class="bs mono">${b.sub}</div>` : ''}`;
       void bannerEl.offsetWidth; bannerEl.classList.add('on');
       if (xrActive) xrHud.banner(b.title, b.sub, b.warn);
-      setTimeout(() => { bannerEl.classList.remove('on'); if (xrActive) xrHud.banner(null); setTimeout(nextBanner, 450); }, banners.length ? 1500 : 2300);
+      setTimeout(() => { bannerEl.classList.remove('on'); if (xrActive) xrHud.banner(null); setTimeout(nextBanner, 450); }, b.hold || (banners.length ? 1500 : 2300));
     }
     // debris: when a gap opens, dust and bits rain down there for a few seconds
     const falls = [];
@@ -2742,19 +2770,20 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if (xrActive) { xrHud.peek(INVENTORY_AFTER_TAKE); inventorySeen = shared.uTime.value; }
       // the gap does not open here but somewhere else, usually behind you: you hear it go
       // and may only find it later. Only the dust falls where the sample lay.
-      const k = got / TOTAL, reach = 1.3 + 3.6 * k;
+      const k = got / TOTAL, reach = DECAY_REACH + DECAY_REACH_GROW * k;
       debris(s.x, s.y, s.z, reach, 1 + got / 10);
       const site = elsewhere(reach);
-      addMark(site.x, site.y, site.z, 0.32 + 1.0 * Math.pow(Math.min(1, got / 14), 1.1), reach, true);
+      addMark(site.x, site.y, site.z, DECAY_STRENGTH + DECAY_STRENGTH_GROW * Math.pow(Math.min(1, got / DECAY_FULL_AT), 1.1), reach, true);
       debris(site.x, site.y, site.z, reach, 1 + got / 10);
       const dist = Math.hypot(site.x - viewPos.x, site.z - viewPos.z) || 1;
       say('crumble', clamp(1.1 - dist / 22, 0.45, 1), clamp(((site.x - viewPos.x) * -viewDir.z + (site.z - viewPos.z) * viewDir.x) / dist, -0.9, 0.9));
-      decayBase = 0.85 * Math.pow(Math.max(0, k - 0.04) / 0.96, 1.15); // everywhere too, from the 3rd sample on
+      decayBase = DECAY_EVERYWHERE * Math.pow(Math.max(0, k - 0.1) / 0.9, 1.4); // everywhere too, from the 6th sample on
       consequence();
       directiveEvent('take', s);
     }
     // where a take is paid for: out of sight and out of reach of the visitor, often a door or
     // another sample, so that ways and things go missing in the course of the visit
+    const DECAY_REACH = 1, DECAY_REACH_GROW = 2.4, DECAY_STRENGTH = 0.22, DECAY_STRENGTH_GROW = 0.7, DECAY_FULL_AT = 30, DECAY_EVERYWHERE = 0.5;
     const ELSEWHERE_MIN = 4, ELSEWHERE_MAX = 16, ELSEWHERE_TARGET_SHARE = 0.6, ELSEWHERE_TRIES = 40;
     function elsewhere(reach) {
       const flat = Math.hypot(viewDir.x, viewDir.z) || 1, fx = viewDir.x / flat, fz = viewDir.z / flat;
@@ -2786,8 +2815,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         lightSeg = { ...lightScript.shift(), t: 0 }; say('flicker', 0.6);
         if (lightSeg.dark) { // in the dark: something falls in, the gaps jump on
           setTimeout(() => say('crumble', 0.4), 300);
-          for (const m of marks) if (m.take) { m.rTo += 0.5; m.r += 0.4; }
-          decayCreep = Math.min(0.3, decayCreep + 0.03);
+          for (const m of marks) if (m.take) { m.rTo += 0.1; m.r += 0.08; }
+          decayCreep = Math.min(0.08, decayCreep + 0.01);
           const R = roomAt(cam.x, cam.z); setTimeout(() => { log(`STRUCTURAL LOSS${R ? ' / ' + R.code.split(' ')[0] : ''}`, true); banner('Structural loss', R ? R.code.split(' ')[0] : '', true); }, (lightSeg.d + 0.6) * 1000);
           for (const m of marks) if (m.take) debris(m.x, m.y, m.z, m.r, 0.5);
         }
@@ -2936,14 +2965,29 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const doorsP = window.__portalDoors || [], shut = new Set();
     const sameDoor = (d, p) => p && Math.hypot(d.x - p[0], d.z - p[1]) < 0.7;
     const lastingDoor = (d) => sameDoor(d, CONFIG.plan.exit) || sameDoor(d, CONFIG.plan.cellarDoor); // the way out and into the cellar stay
-    // the visitor's room keeps at least one way out
-    function trapsVisitor(d) {
-      const R = roomAt(cam.x, cam.z); if (!R) return false;
-      const m = 0.5, inR = (q) => q.x > R.c[0] - m && q.x < R.c[2] + m && q.z > R.c[1] - m && q.z < R.c[3] + m;
-      return inR(d) && doorsP.filter((q, k) => !shut.has(k) && inR(q)).length <= 1;
+    // a way may only fall in when the visitor can still walk to the way out afterwards
+    const DOOR_PAUSE = 45, DOOR_RETRY = 5;
+    function doorCells(d, write) { // the doorway on the plan's grid
+      const g = planGrid, ax = d.along === 'x' ? d.x - d.w / 2 - 0.1 : d.x - 0.15, bx = d.along === 'x' ? d.x + d.w / 2 + 0.1 : d.x + 0.15;
+      const az = d.along === 'x' ? d.z - 0.15 : d.z - d.w / 2 - 0.1, bz = d.along === 'x' ? d.z + 0.15 : d.z + d.w / 2 + 0.1;
+      for (let y = Math.floor(az / g.cell); y <= bz / g.cell; y++) for (let x = Math.floor(ax / g.cell); x <= bx / g.cell; x++) write(y * g.W + x);
+    }
+    function opensExit(d) {
+      if (!planGrid || !CONFIG.plan.exit) return true;
+      const { W, H, cell, mask } = planGrid, wall = mask.slice();
+      doorCells(d, (j) => { wall[j] = 1; });
+      const start = Math.floor(cam.z / cell) * W + Math.floor(cam.x / cell), goal = Math.floor(CONFIG.plan.exit[1] / cell) * W + Math.floor(CONFIG.plan.exit[0] / cell);
+      const stack = [start]; wall[start] = 1;
+      while (stack.length) {
+        const j = stack.pop(); if (j === goal) return true;
+        const x = j % W;
+        for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W]) if (n >= 0 && n < W * H && !wall[n]) { wall[n] = 1; stack.push(n); }
+      }
+      return false;
     }
     function collapseDoor(i) {
       const d = doorsP[i]; shut.add(i);
+      if (planGrid) doorCells(d, (j) => { planGrid.mask[j] = 1; });
       if (window.__portalU) window.__portalU.uShut.value[i] = 1;
       const w = d.w + 0.25, bx = d.along === 'x' ? w : 0.35, bz = d.along === 'x' ? 0.35 : w;
       const block = new THREE.Mesh(new THREE.BoxGeometry(bx, 2.6, bz), new THREE.MeshBasicMaterial()); block.visible = false; block.position.set(d.x, 1.3, d.z);
@@ -2961,9 +3005,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     let doorWait = 0;
     function doorsTick() {
       if (got < 3 || (doorWait -= 0.5) > 0) return; // called every 0.5 s; at most one way every ~25 s
-      const i = doorsP.findIndex((d, i) => !shut.has(i) && !lastingDoor(d) && !trapsVisitor(d) && Math.hypot(cam.x - d.x, cam.z - d.z) > 1.1
+      const i = doorsP.findIndex((d, i) => !shut.has(i) && !lastingDoor(d) && Math.hypot(cam.x - d.x, cam.z - d.z) > 1.1
         && remainAt(d.x, 1.0, d.z) < -0.1 && remainAt(d.x, 0.2, d.z) < -0.05 && remainAt(d.x, 1.8, d.z) < -0.05);
-      if (i >= 0) { collapseDoor(i); doorWait = 25; }
+      if (i >= 0) doorWait = opensExit(doorsP[i]) ? (collapseDoor(i), DOOR_PAUSE) : DOOR_RETRY;
     }
     // --- dust on the ground outside: the way to the cellar, and after a while the way back in ---
     // like the veils in the doors, but lying flat
@@ -3129,7 +3173,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if ((crackT -= dt) <= 0) { const k = 1 - d / range; say('crackle', k); crackT = 0.07 + Math.pow(1 - k, 1.6) * 1.3 * (0.6 + Math.random() * 0.8); }
     }
 
-    let decayBase = 0, decayCreep = 0, near = false;
+    let decayBase = 0, decayCreep = 0, near = false, introDone = false;
+    const INTRO_HOLD = 8000; // ms
     const hint = $('#takeHint');
     return {
       get light() { return lightK; },
@@ -3137,12 +3182,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         // the gaps keep spreading by themselves, the more has been taken the faster
         let n = 0;
         for (const m of marks) {
-          if (m.take) m.rTo = Math.min(5, m.rTo + dt * 0.0011 * got); // ~1 m a minute after 14 samples
+          if (m.take) m.rTo = Math.min(3.5, m.rTo + dt * 0.0005 * got); // ~0.4 m a minute after 14 samples
           m.r += (m.rTo - m.r) * Math.min(1, dt * 0.35);
           shared.uMark.value[n].set(m.x, m.y, m.z, m.s); shared.uMarkR.value[n] = m.r; n++;
         }
         shared.uMarkN.value = n;
-        decayCreep = Math.min(0.2, decayCreep + dt * 0.000025 * Math.max(0, got - 2));
+        decayCreep = Math.min(0.08, decayCreep + dt * 0.00001 * Math.max(0, got - 4));
         shared.uDecay.value += (decayBase + decayCreep - shared.uDecay.value) * Math.min(1, dt * 0.25);
         // the veils: unsteady when a sample is in danger, out when it is gone
         const tt = shared.uTime.value;
@@ -3150,8 +3195,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           const target = s.state !== 'here' ? 0 : s.unstable ? (Math.sin(tt * 23 + k) > 0.2 ? 1.4 : 0.15) : 1;
           s.alive += (target - s.alive) * Math.min(1, dt * (s.unstable ? 30 : 3));
           const breathe = 0.8 + 0.2 * Math.sin(tt * 2.2 + s.x * 3 + s.z * 2);
-          s.outline.uniforms.uK.value = Math.max(0, s.alive) * breathe * (1 + scanK * 0.9);
-          s.ring.material.opacity = Math.min(1, Math.max(0, s.alive) * breathe * 0.85 * (1 + scanK)); s.ring.visible = !ended && s.alive > 0.01;
+          const seen = 1 - sm(SAMPLE_SEEN_NEAR, SAMPLE_SEEN_FAR, Math.hypot(s.x - viewPos.x, s.y - viewPos.y, s.z - viewPos.z)); // seen only from close by
+          if (s.state === 'here' && !ended) s.g.visible = seen > 0.01;
+          s.outline.uniforms.uK.value = Math.max(0, s.alive) * breathe * (1 + scanK * 0.9) * seen;
+          s.ring.material.opacity = Math.min(1, Math.max(0, s.alive) * breathe * 0.85 * (1 + scanK)) * seen; s.ring.visible = !ended && s.alive > 0.01 && seen > 0.01;
           s.ring.scale.setScalar(1 + scanK * 0.6 + 0.08 * Math.sin(tt * 3 + k));
           if (s.state === 'lost' && s.g.visible) { s.t = Math.min(1, s.t + dt / 2); s.g.scale.setScalar(1 - s.t); if (s.t >= 1) s.g.visible = false; }
         });
@@ -3172,6 +3219,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         }
         lightTick(dt); fallTick(dt);
         if (entered && !ended) {
+          if (!introDone) { // what this is about, once, at the beginning (wording still to be settled with Iris)
+            introDone = true;
+            banner('Objective: recover samples', xrActive ? 'look at a marked sample, press the trigger' : 'click a marked sample', false, INTRO_HOLD);
+          }
           lookTick(dt); surveyTick(dt); directiveTick(dt); detectTick(dt); accessTick(dt); hudTick(dt); wayBackTick(dt);
           if (xrActive) { // long nothing taken: the inventory comes back for a moment
             if (xrHud.inventoryOpen || insp.s) inventorySeen = shared.uTime.value;
@@ -3181,8 +3232,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         }
         const cur = roomAt(cam.x, cam.z);
         for (const R of ROOMS) R.label.classList.toggle('here', !!cur && cur.code === R.code);
-        const a = entered && !insp.s && !ended && !!aimed();
-        if (a !== near) { near = a; reticle.classList.toggle('near', a); hint.classList.toggle('on', a); if (xrActive) xrHud.near(a); }
+        const aimS = entered && !insp.s && !ended ? aimed() : null, a = !!aimS;
+        if (xrActive) xrHud.near(aimS);
+        if (a !== near) { near = a; reticle.classList.toggle('near', a); hint.classList.toggle('on', a); }
         if (a) { hint.style.left = pointer.x + 'px'; hint.style.top = pointer.y + 'px'; }
       },
       take: pickUp, get inspecting() { return !!insp.s; }, drawIcon, get latest() { return latest; }, get latestText() { return latestText; },
