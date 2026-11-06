@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quest-Test</title>
+<style>
+html,body{margin:0;background:#0b0b0b;color:#eee;font:20px/1.4 Arial,Helvetica,sans-serif}
+main{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:28px 20px}
+h1{font-size:30px;margin:0 0 6px}
+a.test{display:block;margin:10px 0;padding:18px 20px;border:1px solid #666;color:#fff;text-decoration:none}
+a.test.on{border-color:#e1681c;color:#e1681c}
+button{width:100%;margin:18px 0;padding:24px;font-size:26px;background:#e1681c;color:#000;border:0;cursor:pointer}
+button:disabled{background:#333;color:#888}
+#status{min-height:2.8em}
+canvas{position:fixed;inset:0;z-index:1;opacity:.25}
+</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script>
+</head>
+<body>
+<main>
+  <h1>VISITOR MODE: Quest-Test</h1>
+  <p>Warten, bis der Knopf unten orange wird, dann „In VR gehen“ anklicken.</p>
+  <nav id="tests"></nav>
+  <p id="status">Noch kein Test gewählt.</p>
+  <button id="enter" type="button" disabled>In VR gehen</button>
+</main>
+<script type="module">
+// A separate test page, not part of the piece: how much of the house can the Quest carry?
+// Loads the real scans with the real layout, a head lamp and (switchable) the real decay
+// calculation, and sends frame rates and headset events to the Mac.
+import * as THREE from 'three';
+import { GLTFLoader } from './GLTFLoader.js';
+
+const TESTS = {
+  1: { label: 'Test 1: ein Raum, 2K', rooms: ['R06'], tex: 2048, dedupe: true, mip: true },
+};
+const FULL_HOUSE_START = { x: 12.5, z: 25, yaw: Math.PI / 2 };
+const EYE_HEIGHT = 1.6, WALK_SPEED = 1.2, SNAP_TURN = Math.PI / 6;
+const STICK_ON = 0.7, STICK_OFF = 0.3, STICK_DEAD = 0.15;
+const LOG_EVERY_S = 5, FRAME_GAP_S = 2, STILL_AFTER_S = 20, STILL_MOVE_M = 0.01, STILL_TURN = 0.99995;
+const MARKS = 48, BTN_TRIGGER = 0, BTN_DECAY = 4;
+
+const $ = (s) => document.querySelector(s);
+const testId = new URLSearchParams(location.search).get('test') || '1';
+const test = TESTS[testId];
+const status = (text) => { $('#status').textContent = text; };
+
+function send(type, data = {}) {
+  console.info(type, data); // no server on GitHub: the headset's numbers are read from the panel
+}
+addEventListener('error', (e) => send('error', { message: e.message, line: e.lineno }));
+addEventListener('unhandledrejection', (e) => send('error', { message: String(e.reason) }));
+document.addEventListener('visibilitychange', () => send('page-visibility', { state: document.visibilityState }));
+
+for (const [id, t] of Object.entries(TESTS)) {
+  const a = document.createElement('a');
+  a.className = 'test' + (id === testId ? ' on' : ''); a.href = '?test=' + id; a.textContent = t.label;
+  $('#tests').appendChild(a);
+}
+
+const DECAY = `
+  uniform float uDecay, uSeedD; uniform vec4 uMark[64]; uniform float uMarkR[64]; uniform int uMarkN;
+  float dPerm(float x){ return mod((x * 34.0 + 1.0) * x, 289.0); }
+  float dHash(vec3 i){ i = mod(i, 289.0); return dPerm(dPerm(dPerm(i.x) + i.y) + i.z) / 289.0; }
+  float dNoise(vec3 p){
+    vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(dHash(i), dHash(i + vec3(1, 0, 0)), f.x), mix(dHash(i + vec3(0, 1, 0)), dHash(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(dHash(i + vec3(0, 0, 1)), dHash(i + vec3(1, 0, 1)), f.x), mix(dHash(i + vec3(0, 1, 1)), dHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+  }
+  float remainAt(vec3 p){
+    float r = uDecay;
+    for (int i = 0; i < 64; i++) { if (i >= uMarkN) break; r += uMark[i].w * (1.0 - smoothstep(uMarkR[i] * 0.3, uMarkR[i], distance(p, uMark[i].xyz))); }
+    vec3 q = p + vec3(uSeedD, 0.0, uSeedD * 0.7);
+    float n = dNoise(q * 0.9) * 0.6 + dNoise(q * 2.7 + 17.0) * 0.3 + dNoise(q * 8.1 + 41.0) * 0.1;
+    return 0.07 + 0.93 * smoothstep(0.22, 0.78, n) - r;
+  }`;
+const VS = `varying vec3 vWorld, vN; varying vec2 vUv;
+  void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; vN = mat3(modelMatrix) * normal; vUv = uv; gl_Position = projectionMatrix * viewMatrix * w; }`;
+const FS = `varying vec3 vWorld, vN; varying vec2 vUv;
+  uniform sampler2D uMap; uniform vec4 uClip; uniform vec3 uSpotPos, uSpotDir; uniform float uSpotAng, uDecayOn;
+  ${DECAY}
+  void main(){
+    if (vWorld.x < uClip.x || vWorld.z < uClip.y || vWorld.x > uClip.z || vWorld.z > uClip.w) discard;
+    if (uDecayOn > 0.5 && remainAt(vWorld) < 0.0) discard;
+    vec3 tex = texture2D(uMap, vUv).rgb, n = normalize(vN);
+    vec3 L = uSpotPos - vWorld; float dist = max(length(L), 0.05); vec3 l = L / dist;
+    float d = acos(clamp(dot(-l, uSpotDir), -1.0, 1.0)) / uSpotAng;
+    float beam = (1.0 - smoothstep(0.12, 1.12, d)) * 0.34 + (1.0 - smoothstep(0.0, 0.6, d)) * 0.5;
+    beam *= 0.68 * clamp(6.0 / (0.6 + dist * dist), 0.0, 4.0) * (0.35 + 0.65 * max(dot(n, l), 0.0));
+    gl_FragColor = vec4(tex * (0.12 + beam), 1.0);
+  }`;
+
+if (test) run().catch((e) => { status('Fehler: ' + e.message); send('error', { message: e.message }); });
+
+async function run() {
+  const t0 = performance.now();
+  const shared = {
+    uSpotPos: { value: new THREE.Vector3() }, uSpotDir: { value: new THREE.Vector3(0, 0, -1) }, uSpotAng: { value: 0.4 },
+    uDecayOn: { value: 0 }, uDecay: { value: 0.02 }, uSeedD: { value: Math.floor(Math.random() * 200) },
+    uMark: { value: Array.from({ length: 64 }, () => new THREE.Vector4()) }, uMarkR: { value: new Array(64).fill(1) }, uMarkN: { value: 0 },
+  };
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight); renderer.setClearColor(0x030303);
+  renderer.xr.enabled = true; renderer.xr.setReferenceSpaceType('local-floor'); renderer.xr.setFoveation(1);
+  document.body.appendChild(renderer.domElement);
+  renderer.domElement.addEventListener('webglcontextlost', () => send('webgl-context-lost'));
+  const gl = renderer.getContext();
+  send('device', {
+    userAgent: navigator.userAgent, secure: isSecureContext, maxTexture: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+    fragmentUniforms: gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS), vertexUniforms: gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS),
+    multiview: !!gl.getExtension('OVR_multiview2'), xr: !!navigator.xr,
+  });
+
+  const scene = new THREE.Scene(), rig = new THREE.Group();
+  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 140);
+  camera.position.y = EYE_HEIGHT; rig.add(camera); scene.add(rig);
+
+  // --- load the rooms exactly where the piece puts them ---
+  const layout = await (await fetch('./layout.json')).json();
+  const rooms = test.rooms ? layout.filter((r) => test.rooms.includes(r.file)) : layout;
+  const loader = new GLTFLoader(), textures = new Map(), probe = document.createElement('canvas');
+  probe.width = probe.height = 16;
+  const probeCtx = probe.getContext('2d', { willReadFrequently: true });
+  function prepare(map) {
+    probeCtx.drawImage(map.image, 0, 0, 16, 16);
+    const key = map.image.width + 'x' + map.image.height + ':' + probeCtx.getImageData(0, 0, 16, 16).data.join();
+    if (test.dedupe && textures.has(key)) { if (map.image.close) map.image.close(); return textures.get(key); }
+    const k = test.tex / Math.max(map.image.width, map.image.height);
+    if (k < 1) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(map.image.width * k); c.height = Math.round(map.image.height * k);
+      c.getContext('2d').drawImage(map.image, 0, 0, c.width, c.height);
+      if (map.image.close) map.image.close();
+      map.image = c;
+    }
+    map.colorSpace = THREE.NoColorSpace; map.magFilter = THREE.LinearFilter;
+    map.generateMipmaps = test.mip; map.minFilter = test.mip ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
+    map.needsUpdate = true;
+    if (test.dedupe) textures.set(key, map);
+    return map;
+  }
+  let triangles = 0, textureCount = 0; const seenMaps = new Set();
+  for (let i = 0; i < rooms.length; i++) {
+    const r = rooms[i];
+    status(`Lade Raum ${i + 1} von ${rooms.length} …`);
+    const g = await loader.loadAsync('./' + encodeURIComponent(r.file) + '.glb');
+    const holder = new THREE.Group();
+    g.scene.position.y = -r.floor; holder.add(g.scene);
+    holder.rotation.y = -r.rot * Math.PI / 180; holder.position.set(r.x, 0, r.z);
+    g.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      if (!o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+      triangles += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.getAttribute('position').count / 3;
+      const map = prepare(o.material.map); seenMaps.add(map);
+      o.material = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS, side: THREE.DoubleSide,
+        uniforms: { ...shared, uMap: { value: map }, uClip: { value: new THREE.Vector4(...(r.clip || [-1e9, -1e9, 1e9, 1e9])) } } });
+    });
+    scene.add(holder);
+    await new Promise((done) => setTimeout(done, 0));
+  }
+  textureCount = seenMaps.size;
+  const box = new THREE.Box3().setFromObject(scene);
+  for (let i = 0; i < MARKS; i++) {
+    shared.uMark.value[i].set(THREE.MathUtils.lerp(box.min.x, box.max.x, Math.random()), 0.5, THREE.MathUtils.lerp(box.min.z, box.max.z, Math.random()), 0.05);
+    shared.uMarkR.value[i] = 1.5;
+  }
+  shared.uMarkN.value = MARKS;
+  const clip = rooms[0].clip;
+  const start = test.rooms ? { x: (clip[0] + clip[2]) / 2, z: (clip[1] + clip[3]) / 2, yaw: 0 } : FULL_HOUSE_START;
+  rig.position.set(start.x, 0, start.z); rig.rotation.y = -start.yaw;
+
+  // --- the panel in front of the eyes: frame rate and state ---
+  const panelCanvas = document.createElement('canvas'); panelCanvas.width = 640; panelCanvas.height = 320;
+  const panelCtx = panelCanvas.getContext('2d'), panelTex = new THREE.CanvasTexture(panelCanvas);
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshBasicMaterial({ map: panelTex, transparent: true, depthTest: false }));
+  panel.position.set(0, -0.28, -1); panel.renderOrder = 999; camera.add(panel);
+  function drawPanel(fps) {
+    const c = panelCtx;
+    c.clearRect(0, 0, 640, 320); c.fillStyle = 'rgba(0,0,0,.72)'; c.fillRect(0, 0, 640, 320);
+    c.fillStyle = fps >= 68 ? '#4fdc6a' : fps >= 50 ? '#f2a33a' : '#ff5a4d'; c.font = 'bold 110px Arial'; c.fillText(String(fps), 24, 110);
+    c.fillStyle = '#fff'; c.font = '34px Arial'; c.fillText('Bilder pro Sekunde', 210, 80);
+    c.fillText(test.label.split(':')[0] + ` · ${Math.round(triangles / 1000)} k Dreiecke`, 24, 180);
+    c.fillText(`${textureCount} Texturen · ${test.tex}`, 24, 225);
+    c.fillStyle = shared.uDecayOn.value ? '#e1681c' : '#fff'; c.fillText(`Zerfall ${shared.uDecayOn.value ? 'EIN' : 'AUS'} (Taste A oder X)`, 24, 275);
+    panelTex.needsUpdate = true;
+  }
+
+  // --- movement: the stick walks where the head looks, and turns in steps ---
+  const head = new THREE.Vector3(), forward = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0), offset = new THREE.Vector3();
+  const lastPos = new THREE.Vector3(), lastQuat = new THREE.Quaternion(), quat = new THREE.Quaternion();
+  let turned = false, decayHeld = false, triggerHeld = false;
+  function controls(dt, session) {
+    camera.getWorldPosition(head); camera.getWorldDirection(forward);
+    const pads = [...session.inputSources].map((s) => s.gamepad).filter(Boolean);
+    const pressed = (i) => pads.some((p) => p.buttons[i] && p.buttons[i].pressed);
+    const f = new THREE.Vector3(forward.x, 0, forward.z).normalize();
+    let walk = 0, turn = 0;
+    for (const p of pads) {
+      const x = p.axes[2] || 0, y = p.axes[3] || 0;
+      if (Math.abs(y) > Math.abs(walk) && Math.abs(y) > STICK_DEAD) walk = y;
+      if (Math.abs(x) > Math.abs(turn)) turn = x;
+    }
+    rig.position.addScaledVector(f, -walk * WALK_SPEED * dt);
+    if (!turned && Math.abs(turn) > STICK_ON) {
+      turned = true;
+      const a = -Math.sign(turn) * SNAP_TURN;
+      offset.copy(rig.position).sub(head).applyAxisAngle(Y, a);
+      rig.position.copy(head).add(offset); rig.rotation.y += a;
+    } else if (turned && Math.abs(turn) < STICK_OFF) turned = false;
+    const decayBtn = pressed(BTN_DECAY), trig = pressed(BTN_TRIGGER);
+    if (decayBtn && !decayHeld) { shared.uDecayOn.value = shared.uDecayOn.value ? 0 : 1; send('decay-toggle', { on: !!shared.uDecayOn.value }); }
+    if (trig && !triggerHeld) send('trigger');
+    decayHeld = decayBtn; triggerHeld = trig;
+  }
+
+  // --- the loop: lamp, measuring, events ---
+  let prev = performance.now(), frames = 0, windowStart = prev, slowest = 0, logged = prev, stillSince = prev, stillSent = false, shownFps = 0;
+  renderer.setAnimationLoop(() => {
+    const now = performance.now(), dt = (now - prev) / 1000; prev = now;
+    const session = renderer.xr.getSession();
+    if (session && dt > FRAME_GAP_S) send('frame-gap', { seconds: +dt.toFixed(1), session: session.visibilityState });
+    if (session) controls(Math.min(dt, 0.05), session);
+    camera.getWorldPosition(head); camera.getWorldDirection(forward); camera.getWorldQuaternion(quat);
+    shared.uSpotPos.value.copy(head).addScaledVector(Y, -0.36); shared.uSpotDir.value.copy(forward);
+    if (session) {
+      const moved = head.distanceTo(lastPos) > STILL_MOVE_M || Math.abs(quat.dot(lastQuat)) < STILL_TURN;
+      if (moved) {
+        if (stillSent) send('still-end', { seconds: +((now - stillSince) / 1000).toFixed(1) });
+        lastPos.copy(head); lastQuat.copy(quat); stillSince = now; stillSent = false;
+      } else if (!stillSent && (now - stillSince) / 1000 > STILL_AFTER_S) { stillSent = true; send('still-start'); }
+    }
+    renderer.render(scene, camera);
+    frames++; slowest = Math.max(slowest, dt);
+    if (now - windowStart >= 1000) {
+      shownFps = Math.round(frames * 1000 / (now - windowStart));
+      if (session) drawPanel(shownFps);
+      frames = 0; windowStart = now;
+      if (session && now - logged >= LOG_EVERY_S * 1000) {
+        logged = now;
+        send('frame-rate', { fps: shownFps, slowestMs: Math.round(slowest * 1000), decay: !!shared.uDecayOn.value, targetRate: session.frameRate,
+          calls: renderer.info.render.calls, renderedTriangles: renderer.info.render.triangles,
+          heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null, x: +head.x.toFixed(1), z: +head.z.toFixed(1) });
+        slowest = 0;
+      }
+    }
+  });
+  drawPanel(0);
+  const loadSeconds = +((performance.now() - t0) / 1000).toFixed(1);
+  send('loaded', { seconds: loadSeconds, triangles: Math.round(triangles), textures: textureCount, rooms: rooms.length });
+
+  // --- entering VR ---
+  const enter = $('#enter');
+  const supported = navigator.xr && await navigator.xr.isSessionSupported('immersive-vr');
+  send('xr-support', { supported: !!supported });
+  if (!supported) { status(`Geladen in ${loadSeconds} s. Dieses Gerät bietet kein VR, „In VR gehen“ geht nur auf der Quest.`); return; }
+  status(`Geladen in ${loadSeconds} s.`);
+  enter.disabled = false;
+  enter.addEventListener('click', async () => {
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] });
+      session.addEventListener('visibilitychange', () => send('session-visibility', { state: session.visibilityState }));
+      session.addEventListener('end', () => { send('session-end'); status('VR beendet. Du kannst erneut eintreten oder den nächsten Test wählen.'); });
+      await renderer.xr.setSession(session);
+      if (session.updateTargetFrameRate && session.supportedFrameRates && session.supportedFrameRates.includes(72)) await session.updateTargetFrameRate(72);
+      send('session-start', { rate: session.frameRate, foveation: session.renderState.layers ? 'layers' : 'baseLayer' });
+    } catch (e) { status('VR konnte nicht starten: ' + e.message); send('error', { message: 'enter: ' + e.message }); }
+  });
+}
+</script>
+</body>
+</html>
