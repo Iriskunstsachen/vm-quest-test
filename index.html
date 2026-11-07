@@ -2884,12 +2884,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         const art = r.art || (r.id.split('-')[1] || 'B')[0], fits = SPOT_RULES[art] || SPOT_RULES.B;
         for (let tries = 0; tries < 15000; tries++) {
           pick();
-          if (!inside(0.35) || !fits(P, N)) continue;
+          if (!inside(0.6) || !fits(P, N)) continue; // not right at the edge of the room
           if (CONFIG.cat && Math.hypot(P.x - CONFIG.cat.x, P.z - CONFIG.cat.z) < 1.3) continue;
           if (mine.some((q, j) => j !== k && Math.hypot(q.x - P.x, q.z - P.z) < 0.7)) continue;
           up.set(P.clone().addScaledVector(N, 0.02), new THREE.Vector3(0, 1, 0)); up.far = 0.25; if (up.intersectObject(o.holder, true).length) continue; // nothing on top of it
-          let open = 0; for (let a = 0; a < 8; a++) { const d = new THREE.Vector3(Math.cos(a * 0.785) * 0.8, 0.6, Math.sin(a * 0.785) * 0.8).normalize(); up.set(P.clone().addScaledVector(N, 0.03), d); up.far = 1.3; if (!up.intersectObject(o.holder, true).length) open++; }
-          if (open < 3) continue; // to be seen from where one stands, not tucked away inside the scan
+          let open = 0; for (let a = 0; a < 8; a++) { const d = new THREE.Vector3(Math.cos(a * 0.785) * 0.8, 0.6, Math.sin(a * 0.785) * 0.8).normalize(); up.set(P.clone().addScaledVector(N, 0.03), d); up.far = 1.8; if (!up.intersectObject(o.holder, true).length) open++; }
+          if (open < 6) continue; // to be seen from most sides, not tucked away in a corner or inside the scan
           mine[k] = { x: P.x, y: P.y, z: P.z, room: o.code, holder: o.holder, realR: r, nrm: art === 'S' ? N.clone() : null };
           break;
         }
@@ -3170,7 +3170,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const o = new THREE.Group(); o.add(s.real ? realThing(s.real, true) : thing(s.kind, s.seed, viewMat));
       insp.hB = s.real ? s.real.harz_cm[2] / 100 : 0.025; // the block's height: what the resin rises to
       const block = s.real ? new THREE.BoxGeometry(s.real.harz_cm[0] / 100, insp.hB, s.real.harz_cm[1] / 100) : new THREE.BoxGeometry(0.1, 0.025, 0.05);
-      const resin = new THREE.Mesh(block, new THREE.MeshStandardMaterial({ color: 0xf6f8f6, emissive: 0x1a1c1a, roughness: 0.5, transparent: true, opacity: s.real ? 0.06 : 0.3, depthWrite: false, clippingPlanes: [insp.plane] }));
+      // the resin as it is: frosted, milky at the sides; the top, through which one looks in, nearly clear
+      const resinMat = (op) => new THREE.MeshStandardMaterial({ color: 0xf6f8f6, emissive: 0x2a2c2a, roughness: 0.9, transparent: true, opacity: op, depthWrite: false, clippingPlanes: [insp.plane] });
+      const frosted = resinMat(s.real ? 0.42 : 0.3), clear = s.real ? resinMat(0.07) : frosted;
+      const resin = new THREE.Mesh(block, [frosted, frosted, clear, frosted, frosted, frosted]); // box faces: +x, -x, +y (top), -y, +z, -z
       const edge = new THREE.LineSegments(new THREE.EdgesGeometry(block), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, clippingPlanes: [insp.plane] }));
       resin.renderOrder = 2; o.add(resin, edge);
       o.rotation.y = s.g.rotation.y + 0.6;
@@ -3279,8 +3282,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         cand.sort(() => Math.random() - 0.5);
         for (const [x, z] of cand.slice(0, 14)) {
           if (freeAround(x, z).size < ESCAPE_ROOM) continue;
-          const mx = (c[0] + c[2]) / 2, mz = (c[1] + c[3]) / 2;
-          Object.assign(cam, { x, z, yaw: Math.atan2(mx - x, -(mz - z)), pitch: -0.1 }); anchorX = x; anchorZ = z; anchorT = performance.now();
+          // looking at the room's veil of dust (its way on), else at the middle of the room
+          const door = (window.__portalDoors || []).filter((d) => d.x > c[0] - 0.5 && d.x < c[2] + 0.5 && d.z > c[1] - 0.5 && d.z < c[3] + 0.5)
+            .sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z))[0];
+          const tx = door ? door.x : (c[0] + c[2]) / 2, tz = door ? door.z : (c[1] + c[3]) / 2;
+          if (door && Math.hypot(tx - x, tz - z) < 2.5) continue; // not right in front of it either
+          Object.assign(cam, { x, z, yaw: Math.atan2(tx - x, -(tz - z)), pitch: -0.05 }); anchorX = x; anchorZ = z; anchorT = performance.now();
           return o.code;
         }
       }
