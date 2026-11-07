@@ -2226,7 +2226,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const collide = new THREE.Group(), hard = new THREE.Group();
   let planGrid = null, wallMat = null, wallSlabs = null, scanCollide = null, portalU = null;
   const OUTER_VEIL_NEAR = 7, OUTER_VEIL_FAR = 16;
-  const WALL_BEHIND = 0.35, WALL_SEEN_OUTSIDE = 2.4;
+  const WALL_BEHIND = 0.35, WALL_SEEN_OUTSIDE = 2.4, WALL_PIECE = 0.5;
   await (async () => {
     // the walls and doors as Iris drew them (_build/plan_iris.json): lines in metres on a grid of 5 cm
     const cell = 0.05, W = Math.ceil(CONFIG.plan.size[0] / cell), H = Math.ceil(CONFIG.plan.size[1] / cell), m = new Uint8Array(W * H);
@@ -2320,9 +2320,24 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     });
     {
       const P = [], I = [], low = -0.3, high = 4.5;
+      // shown only where a scan stands in front of it: there it closes the scan's holes. Where no scan
+      // was made at all, a black wall would just be a black wall; there it stops you but is not drawn.
+      const look = new THREE.Raycaster(); look.firstHitOnly = false;
+      const clipOf = (o) => { while (o && o.parent !== model) o = o.parent; const i = model.children.indexOf(o); return i >= 0 ? CONFIG.rooms[i].clip : null; };
+      const scanAt = (x, y, z, dx, dz) => { look.set(new THREE.Vector3(x, y, z), new THREE.Vector3(dx, 0, dz)); look.far = 0.75;
+        return look.intersectObject(model, true).some((h) => { const c = clipOf(h.object); return !c || (h.point.x > c[0] && h.point.x < c[2] && h.point.z > c[1] && h.point.z < c[3]); }); };
+      let hidden = 0;
       for (const [ax, az, bx, bz] of CONFIG.plan.walls.filter((w) => !(CONFIG.plan.unseen || []).some((u) => u.every((v, i) => Math.abs(v - w[i]) < 0.01)))) {
-        const b = P.length / 3; P.push(ax, low, az, bx, low, bz, bx, high, bz, ax, high, az); I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+        const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / WALL_PIECE)), nx = -(bz - az) / len, nz = (bx - ax) / len;
+        for (let k = 0; k < n; k++) {
+          const x0 = ax + (bx - ax) * k / n, z0 = az + (bz - az) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, z1 = az + (bz - az) * (k + 1) / n, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+          let seen = 0;
+          for (const y of [0.6, 1.2, 1.8]) for (const sd of [1, -1]) if (scanAt(mx + nx * sd * 0.7, y, mz + nz * sd * 0.7, -nx * sd, -nz * sd)) seen++;
+          if (seen < 2) { hidden++; continue; }
+          const b = P.length / 3; P.push(x0, low, z0, x1, low, z1, x1, high, z1, x0, high, z0); I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+        }
       }
+      window.__wallPiecesHidden = hidden;
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I);
       wallSlabs = new THREE.Mesh(g, wallMat); wallSlabs.frustumCulled = false; wallSlabs.renderOrder = -1; scene.add(wallSlabs);
     }
@@ -2402,7 +2417,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const XR_AMBIENT = 0.75; // how much of the room shows outside the lamp (fixed, Iris: step 4 of the 5 tried)
   const INVENTORY_AFTER_TAKE = 6, INVENTORY_REMIND = 90, INVENTORY_REMIND_SHOW = 6; // seconds
   const WALK_DEAD = 0.15, TURN_DEAD = 0.2, TURN_SPEED = 1.0; // radians per second at full push
-  const BTN_TRIGGER = 0, BTN_INVENTORY = 4, BTN_LEAVE = 5;
+  const BTN_TRIGGER = 0, BTN_STICK = 3, BTN_A = 4, BTN_B = 5; // one controller is enough: the right one, with A and B
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
   const INSPECT_DISTANCE = 0.36, INSPECT_DROP = 0.34, INSPECT_SCALE = 2; // held below the eyes, so one looks onto the block's face
   const XR_SETTLE_FRAMES = 30;
@@ -2437,8 +2452,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // the short guide: first the controller (so the trigger is known), then the headset; nothing about the visit itself
     const GUIDE = () => [
       { title: L('The controller', 'Der Controller'), draw: 'controller', lines: L(
-        ['Index finger button: continue, and pick something up.', 'Stick forward or back: walk. Sideways: turn.', 'B or Y: if you are stuck somewhere.'],
-        ['Zeigefinger-Taste: weiter, und etwas aufheben.', 'Stick nach vorne oder hinten: gehen. Zur Seite: drehen.', 'B oder Y: wenn du irgendwo feststeckst.']) },
+        ['Index finger button: continue, and pick something up.', 'Stick forward or back: walk. Sideways: turn.', 'A: to another spot, if you are stuck.', 'B twice: begin anew.'],
+        ['Zeigefinger-Taste: weiter, und etwas aufheben.', 'Stick nach vorne oder hinten: gehen. Zur Seite: drehen.', 'A: an eine andere Stelle, wenn du feststeckst.', 'B zweimal: neu beginnen.']) },
       { title: L('The headset', 'Die Brille'), draw: 'headset', lines: L(
         ['Tighten the strap at the back until the headset sits still.', 'Blurry? Move it slightly up or down.', 'Eye distance: slide the lenses sideways.'],
         ['Zieh den Riemen hinten fest, bis die Brille ruhig sitzt.', 'Unscharf? Schieb sie etwas nach oben oder unten.', 'Augenabstand: Schieb die Linsen seitlich.']) },
@@ -2455,7 +2470,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       g.beginPath(); g.arc(240, 320, 42, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(240, 320, 20, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill();
       const k = Math.sin(t * 2.2) * 18; g.lineWidth = 5; arrow(g, 240, 270, 240, 205 + k * 0.6, ORANGE); arrow(g, 240, 370, 240, 435 - k * 0.6, ORANGE); g.lineWidth = 4;
       g.strokeStyle = '#fff'; g.beginPath(); g.arc(360, 300, 24, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(395, 365, 24, 0, Math.PI * 2); g.stroke();
-      g.font = 'bold 26px Arial'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText('B/Y', 360, 309); g.fillText('A/X', 395, 374);
+      g.font = 'bold 26px Arial'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText('B', 360, 309); g.fillText('A', 395, 374);
       g.font = '28px Arial'; g.fillText(L('Stick', 'Stick'), 240, 470);
       // from the side: the grip, and the trigger under the index finger, glowing
       g.strokeStyle = '#fff'; g.fillStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 4;
@@ -2523,7 +2538,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         g.fillStyle = '#e1681c'; g.fillRect(bx, by, bw, bh);
         g.textAlign = 'center'; g.fillStyle = '#000'; g.font = 'bold 44px Arial'; g.fillText(L('ENTER AGAIN', 'NOCHMAL EINTRETEN'), w / 2, by + 52);
         g.font = '26px "Courier New",monospace'; g.fillText(L('press the index finger button', 'Zeigefinger-Taste drücken'), w / 2, by + 90);
-        g.fillStyle = 'rgba(255,255,255,.65)'; g.fillText(L('B / Y: start screen', 'B / Y: Startbildschirm'), w / 2, h - 42); g.textAlign = 'left';
+        g.fillStyle = 'rgba(255,255,255,.65)'; g.fillText(L('B: start screen', 'B: Startbildschirm'), w / 2, h - 42); g.textAlign = 'left';
         inventoryP.tex.needsUpdate = true; return;
       }
       g.fillText(L('VISITOR ACCESS ', 'BESUCHSZEIT ') + $('#accessT').textContent, 48, 66);
@@ -2696,7 +2711,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     if (on && !xrPose.held[name]) action();
     xrPose.held[name] = on;
   }
-  let lastEscape = -1e9;
+  let lastEscape = -1e9, restartAsked = -1e9;
   function xrInput(dt, now, session) {
     const pads = [...session.inputSources].map((s) => s.gamepad).filter(Boolean);
     if (xrHud.guiding) { xrPressed(pads, BTN_TRIGGER, 'take', () => xrHud.guideNext()); return; }
@@ -2724,10 +2739,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       if (visitor && visitor.debug.ended) { if (xrHud.endShown) visitor.reset(); else xrHud.endSkip(); }
       else if (visitor && !busy) visitor.take();
     });
-    xrPressed(pads, BTN_INVENTORY, 'inventory', () => { if (!(visitor && visitor.debug.ended)) xrHud.toggleInventory(); });
-    xrPressed(pads, BTN_LEAVE, 'leave', () => { // at the end back to the start screen (name, language); during the visit: out of where you are stuck
-      if (visitor && visitor.debug.ended) { if (xrHud.endShown) session.end(); }
-      else if (!busy && now - lastEscape > 3000) { lastEscape = now; escape(true); }
+    xrPressed(pads, BTN_STICK, 'inventory', () => { if (!(visitor && visitor.debug.ended)) xrHud.toggleInventory(); }); // pressing the stick: the inventory
+    xrPressed(pads, BTN_A, 'escape', () => { // A: somewhere else, when stuck
+      if (visitor && !visitor.debug.ended && !busy && now - lastEscape > 3000) { lastEscape = now; escape(true); }
+    });
+    xrPressed(pads, BTN_B, 'restart', () => { // B: at the end back to the start screen; during the visit twice in a row: begin anew
+      if (visitor && visitor.debug.ended) { if (xrHud.endShown) session.end(); return; }
+      if (now - restartAsked < 2500) { restartAsked = -1e9; visitor.reset(); } else { restartAsked = now; visitor.notice(L('Press B again to begin anew', 'Nochmal B: neu beginnen')); }
     });
   }
   // before the frame's movement: where the head is now
@@ -3168,9 +3186,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         if (f.t > 4) { scene.remove(f.pts); f.pts.geometry.dispose(); falls.splice(i, 1); }
       }
     }
-    // where a visit begins: a random room, on floor with room to walk all round, not on top of a sample
+    // where a visit begins: the Festsaal, on a random free piece of floor with room to walk all round, not on top of a sample
+    const START_ROOM = 'R01';
     function placeStart() {
-      const pool = rooms.filter((o) => o.code !== 'N01').sort(() => Math.random() - 0.5);
+      const pool = [...rooms.filter((o) => o.code === START_ROOM), ...rooms.filter((o) => o.code !== START_ROOM && o.code !== 'N01')]; // everyone begins in the Festsaal
       for (const o of pool) {
         const c = o.c, cand = [];
         for (let x = c[0] + 0.6; x < c[2] - 0.6; x += 0.45) for (let z = c[1] + 0.6; z < c[3] - 0.6; z += 0.45) {
@@ -3738,6 +3757,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       testStore(s) { s.state = 'inspect'; s.g.visible = false; store(s); }, // for testing only
       testEnd() { end('Access expired'); }, // for testing only
       relocated() { banner(L('Position corrected', 'Position korrigiert')); say('crumble', 0.25); },
+      notice(t) { banner(t); },
     };
   })() : null;
 
