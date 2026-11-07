@@ -1313,6 +1313,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     step(onGlass) { footstep(onGlass); },
     outside(v) { setOutside(!!v); },
     floor(kind) { floor = FLOORS[kind] || FLOORS.stone; },
+    // one of the last seconds: a dry, short click of noise, a little louder towards the end
+    tick(v = 0.5) {
+      if (!ctx || ctx.state !== 'running' || !enabled) return;
+      const b = ctx.createGain(); b.gain.value = 1; out(b, 0); const t = ctx.currentTime + 0.01;
+      noiseHit(t, b, 0.03 + 0.05 * v, 'highpass', 2400, 0.7, 0.001, 0.025, 0.05);
+      noiseHit(t + 0.004, b, 0.02 + 0.03 * v, 'bandpass', 900, 1.2, 0.001, 0.04, 0.06);
+    },
     walked(d, onGlass) {
       const now = performance.now();
       if (!(d > 0.002)) return;
@@ -2463,7 +2470,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const xrUp = new THREE.Vector3(0, 1, 0), xrOffset = new THREE.Vector3(), xrFlat = new THREE.Vector3();
 
   const xrHud = (() => {
-    let guideP, guidePage = -1, root = null, bannerP, inventoryP, inspectP, dot, hint, corner, cornerText = '', nearSample = null, showInventory = false, endedLines = null;
+    let countP = null, guideP, guidePage = -1, root = null, bannerP, inventoryP, inspectP, dot, hint, corner, cornerText = '', nearSample = null, showInventory = false, endedLines = null;
     let endedRegister = [], frames = 0, fpsT = 0, fps = 0, drawT = 0, inspectKey = '', peekT = 0, plan = null;
     function panel(w, h, metres) {
       const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -2663,6 +2670,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         // the time and the count, small, in a corner of the view
         guideP = panel(1000, 960, 0.95); root.add(guideP.mesh); this.guideStart();
         corner = panel(420, 64, CORNER_WIDTH); corner.mesh.position.set(CORNER_X, CORNER_Y, -1.5); camera.add(corner.mesh);
+        countP = panel(256, 256, 0.16); countP.mesh.position.set(0, -0.08, -1.2); camera.add(countP.mesh); // the last seconds, in the middle of the view
       },
       banner(title, sub, warn) {
         if (!bannerP || plan) return;
@@ -2675,6 +2683,12 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       toggleInventory() { showInventory = !showInventory; if (showInventory) drawInventory(); },
       // the end: the plan seen from above, drawn once onto a panel; everything else goes dark
       ended(lines, register, planCam, aspect, play) { endedLines = lines; endedRegister = register; showInventory = true; drawInventory(); plan = { cam: planCam, aspect, play }; },
+      countdown(n) { // n seconds left (0: away)
+        if (!countP) return; const { g, w, h } = countP;
+        countP.mesh.visible = n > 0; if (n <= 0) return;
+        g.clearRect(0, 0, w, h); g.textAlign = 'center'; g.shadowColor = '#000'; g.shadowBlur = 16;
+        g.fillStyle = 'rgba(225,104,28,.92)'; g.font = 'bold 150px Arial'; g.fillText(String(n), w / 2, h / 2 + 52); countP.tex.needsUpdate = true;
+      },
       get endShown() { return !!(plan && plan.t >= END_HOLD + END_DECAY + END_DOTS + END_MOVE); },
       endSkip() { if (plan && plan.t !== undefined) plan.t = END_HOLD + END_DECAY + END_DOTS + END_MOVE; }, // the trigger while it plays
       guideStart() { guidePage = 0; drawGuide(); },
@@ -2702,8 +2716,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         const nowText = `${$('#accessT').textContent}   ${$('#invCount').textContent}`;
         corner.mesh.visible = entered && guidePage < 0;
         if (nowText !== cornerText) {
-          cornerText = nowText; const c = corner;
-          c.g.clearRect(0, 0, c.w, c.h); c.g.textAlign = 'left'; c.g.shadowColor = '#000'; c.g.shadowBlur = 8; c.g.fillStyle = 'rgba(255,255,255,.75)'; c.g.font = '40px "Courier New",monospace';
+          cornerText = nowText; const c = corner, sec = /^00:(\d\d)/.exec(nowText), last = sec && +sec[1] <= 10;
+          c.g.clearRect(0, 0, c.w, c.h); c.g.textAlign = 'left'; c.g.shadowColor = '#000'; c.g.shadowBlur = 8;
+          c.g.fillStyle = last ? (+sec[1] % 2 ? '#e1681c' : 'rgba(255,190,140,.95)') : 'rgba(255,255,255,.75)'; c.g.font = (last ? 'bold ' : '') + '40px "Courier New",monospace';
           c.g.fillText(nowText, 6, 46); c.tex.needsUpdate = true;
         }
         root.position.lerp(xrOffset, 1 - Math.exp(-dt * HUD_FOLLOW));
@@ -3511,7 +3526,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     }
     // --- the visit: limited access (VISITOR MODE), the way out ---
     const accessEl = $('#accessT');
-    let access = (CONFIG.samples.minutes || 10) * 60, onSite = 0, leaveAsk = 0;
+    let access = (CONFIG.samples.minutes || 10) * 60, onSite = 0, leaveAsk = 0, lastSec = -1;
     const warned = new Set();
     function accessTick(dt) {
       access -= dt; onSite += dt;
@@ -3519,6 +3534,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       accessEl.textContent = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
       accessEl.parentNode.classList.toggle('low', t < 60);
       for (const w of [300, 60, 30, 10]) if (t <= w && !warned.has(w)) { warned.add(w); banner('Visitor access expires', `in ${w >= 60 ? w / 60 + ' min' : w + ' s'}`, true); }
+      const sec = Math.ceil(t); // the last ten seconds: counted down, each with a dry little click
+      if (t <= 10 && sec !== lastSec) { lastSec = sec; if (xrActive) xrHud.countdown(sec); say('tick', 1 - sec / 12); }
       if (access <= 0) end('Access expired');
       if (leaveAsk > 0) leaveAsk -= dt;
     }
@@ -3729,6 +3746,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const REGISTER_ROWS = 6;
     function end(title) {
       if (ended) return;
+      if (xrActive) xrHud.countdown(0);
       ended = true; closeInspect();
       const KEY = 'visitorMode.sessions';
       let all = []; try { all = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (err) {}
@@ -3765,7 +3783,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       for (const f of falls) { scene.remove(f.pts); f.pts.geometry.dispose(); } falls.length = 0;
       marks.length = 0; shared.uDecay.value = 0; shared.uMarkN.value = 0; decayBase = 0; decayCreep = 0;
       got = 0; lostN = 0; latest = null; latestText = ''; remaining = 1; ended = false; near = false;
-      access = (CONFIG.samples.minutes || 10) * 60; onSite = 0; leaveAsk = 0; warned.clear(); trail.length = 0;
+      access = (CONFIG.samples.minutes || 10) * 60; onSite = 0; leaveAsk = 0; warned.clear(); trail.length = 0; lastSec = -1; xrHud.countdown(0);
       hudT = 30; replay = null; wasOutside = false; outK = 0; shared.uBoost.value = LAMP_BASE; if (wallMat) wallMat.uniforms.uOut.value = 0;
       if (catDust && catDust.pts && catDust.pts.parent) { scene.remove(catDust.pts); catDust.pts.geometry.dispose(); } catDust = null; if (cat) cat.visible = true; if (portalU) portalU.uOutside.value = 0; if (labels) labels.forEach((sp) => { sp.material.opacity = 0; sp.visible = false; }); if (coneInside) shared.uSpotAng.value = coneInside; say('outside', false);
       lightScript = []; lightSeg = null; lightK = 1; gaze = null; gazeT = 0; gazeMark = null;
