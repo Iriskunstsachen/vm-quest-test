@@ -676,7 +676,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   }
   // room modes (axial, f = 343 / 2L, and the 2nd ones) for the cellar's size
   const ROOM = [4.7, 3.3, 6.9];
-  const TONE = 0.0035; // level of the room tone: quiet, under the steps
+  const TONE = 0.0024; // level of the room tone: quiet, under the steps
   function ambience() {
     pinkBuf = pinkBuffer(13);
     const src = ctx.createBufferSource(); src.buffer = pinkBuf; src.loop = true;
@@ -709,13 +709,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // air: a breath of mid-range noise, barely there
     const air = ctx.createBufferSource(); air.buffer = pinkBuf; air.loop = true;
     const abp = ctx.createBiquadFilter(); abp.type = 'bandpass'; abp.frequency.value = 700; abp.Q.value = 0.5;
-    const ag = ctx.createGain(); ag.gain.value = 0.00025;
+    const ag = ctx.createGain(); ag.gain.value = 0.00015;
     air.connect(abp); abp.connect(ag); ag.connect(roomBus); air.start(0, rand(0, 13));
     // recorder hiss
     const hs = ctx.createBufferSource(); hs.buffer = pinkBuf; hs.loop = true; hs.playbackRate.value = 1.37;
     const hhp = ctx.createBiquadFilter(); hhp.type = 'highpass'; hhp.frequency.value = 4000;
-    const hg = ctx.createGain(); hg.gain.value = 0.00012;
-    hs.connect(hhp); hhp.connect(hg); out(hg, 0); hs.start(0, rand(0, 13));
+    const hg = ctx.createGain(); hg.gain.value = 0.00006;
+    hs.connect(hhp); hhp.connect(hg); hg.connect(roomBus); hs.start(0, rand(0, 13));
   }
   // a distant rumble from above: a lorry passing in the street, heard through
   // earth and stone (only the lowest frequencies arrive), drifting across
@@ -904,6 +904,19 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     n.connect(f); f.connect(g); g.connect(dest);
     n.start(t, rand(0, 1.5), len);
   }
+  // what the floor is made of, room by room: the same soft step, a different sound. Dry, except a faint
+  // breath of noise after the step in the large rooms (tail), which is what makes them feel large.
+  const FLOORS = {
+    stone: { tone: 1, firm: 1, scuff: 1, grit: 1 },
+    wood: { tone: 0.6, firm: 1.4, scuff: 0.55, grit: 0.2, boards: true, tail: 0.4, gain: 1.1 },
+    tile: { tone: 1.35, firm: 1.1, scuff: 0.6, grit: 0.5, click: true },
+    narrow: { tone: 1.2, firm: 0.9, scuff: 1.3, grit: 1.2, gain: 0.9 },
+    concrete: { tone: 0.9, firm: 1, scuff: 1.2, grit: 1.1, tail: 0.15 },
+    soft: { tone: 0.5, firm: 0.7, scuff: 0.4, grit: 0.1, gain: 0.8 },
+    paper: { tone: 0.8, firm: 0.6, scuff: 0.7, grit: 0.2, paper: true },
+    earth: { tone: 0.7, firm: 0.9, scuff: 1, grit: 1.6 },
+  };
+  let floor = FLOORS.stone;
   function stoneStep(t, dest, v) {
     // soft, careful steps (soft soles, not heels): the foot is set down gently, so
     // there is hardly any thud; what you hear is mostly the sole rolling over the
@@ -912,13 +925,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     const r = Math.random();
     const kind = r < 0.3 ? 'short' : r < 0.55 ? 'long' : r < 0.7 ? 'roll' : 'normal';
     const len = kind === 'short' ? rand(0.45, 0.7) : kind === 'long' ? rand(1.6, 2.6) : rand(0.85, 1.25);
-    const firm = rand(0.5, 1.15) * (kind === 'short' ? 0.8 : 1), scuff = rand(0.5, 1.6), tone = rand(0.75, 1.3);
+    const firm = rand(0.5, 1.15) * (kind === 'short' ? 0.8 : 1) * floor.firm, scuff = rand(0.5, 1.6) * floor.scuff, tone = rand(0.75, 1.3) * floor.tone;
     // the heel set down: a soft, muffled touch (slow attack, no deep body)
     noiseHit(t, dest, 0.07 * v * firm, 'lowpass', rand(700, 1400) * tone, rand(0.5, 0.9), rand(0.005, 0.013), rand(0.03, 0.07) * Math.min(len, 1.3), 0.1);
     noiseHit(t, dest, 0.025 * v * firm, 'bandpass', rand(280, 520) * tone, 0.9, rand(0.006, 0.01), rand(0.035, 0.065), 0.1);
     // the sole rolling over the dust: the main sound of the step, its length varies
     const ts = t + rand(0.015, 0.05) * len;
-    const sf = rand(800, 2400);
+    const sf = rand(800, 2400) * floor.tone;
     noiseHit(ts, dest, rand(0.018, 0.036) * v * scuff, 'bandpass', sf, rand(0.5, 1.1), rand(0.015, 0.04) * len, rand(0.06, 0.13) * len, 0.2 * len + 0.05);
     if (kind === 'long') // the sole slides on a little further, getting quieter and a bit higher
       noiseHit(ts + rand(0.08, 0.14), dest, rand(0.01, 0.02) * v * scuff, 'bandpass', sf * rand(1.1, 1.5), rand(0.7, 1.2), rand(0.04, 0.08), rand(0.12, 0.22), 0.4);
@@ -976,8 +989,13 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     if (p) { bus.connect(p); out(p, 0); } else out(bus, 0);
     const v = rand(0.7, 1.25);
     if (isOutside) { grassStep(t, bus, v * (stepSide > 0 ? 1 : rand(0.85, 0.95))); return; }
+    bus.gain.value *= floor.gain || 1;
     stoneStep(t, bus, v * (stepSide > 0 ? 1 : rand(0.85, 0.95))); // one foot lands a touch softer
-    grit(t + rand(0.01, 0.04), bus, rand(0.2, 0.9));
+    grit(t + rand(0.01, 0.04), bus, rand(0.2, 0.9) * floor.grit);
+    if (floor.boards) noiseHit(t + rand(0, 0.01), bus, rand(0.02, 0.035) * v, 'bandpass', rand(320, 520), 1, 0.005, rand(0.05, 0.08), 0.15); // boards give a little
+    if (floor.click) noiseHit(t, bus, rand(0.012, 0.024) * v, 'highpass', rand(2800, 4200), 0.7, 0.001, rand(0.008, 0.016), 0.04); // the sole on a hard tile
+    if (floor.paper) for (let k = 0, n = Math.floor(rand(8, 18)); k < n; k++) noiseHit(t + rand(0, 0.28), bus, rand(0.006, 0.016) * v, 'highpass', rand(2200, 5000), 0.8, 0.003, rand(0.012, 0.04), 0.08); // paper and things underfoot
+    if (floor.tail) noiseHit(t + 0.03, bus, 0.03 * floor.tail * v, 'lowpass', 600, 0.5, 0.05, 0.3, 0.6);
     // only where broken glass and bottles really lie on the floor (almost every step there)
     if (onGlass && Math.random() < 0.85) glass(t + rand(0.01, 0.05), bus);
     // now and then a small stone rolling away
@@ -1234,6 +1252,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // one footstep, at the moment the viewer's stride lands (keeps sound and bob in sync)
     step(onGlass) { footstep(onGlass); },
     outside(v) { setOutside(!!v); },
+    floor(kind) { floor = FLOORS[kind] || FLOORS.stone; },
     walked(d, onGlass) {
       const now = performance.now();
       if (!(d > 0.002)) return;
@@ -1930,9 +1949,48 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           bumpAt = now; bumpT = 0;
           if (window.RoomSound && RoomSound.bump) RoomSound.bump(blocked);
         }
+        if (now - anchorT > STUCK_AFTER) { anchorT = now; escape(false); } // pushing for a while without getting anywhere
         break;
       }
     }
+    if (Math.hypot(cam.x - anchorX, cam.z - anchorZ) > 0.6) { anchorX = cam.x; anchorZ = cam.z; anchorT = performance.now(); }
+  }
+  // Stuck somewhere: where the visitor can still walk from a spot, found by trying the steps
+  const STUCK_AFTER = 4000, ESCAPE_CELL = 0.3, ESCAPE_ROOM = 60, ESCAPE_TRIES = 40; // ESCAPE_ROOM cells of 0.3 m: about 5 m²
+  let anchorX = 0, anchorZ = 0, anchorT = 0;
+  function freeAround(x, z) {
+    const keep = [cam.x, cam.y, cam.z, floorY, blocked], G = ESCAPE_CELL, key = (a, b) => Math.round((a - x) / G) + ',' + Math.round((b - z) / G);
+    const seen = new Set([key(x, z)]), todo = [[x, z]];
+    while (todo.length && seen.size < ESCAPE_ROOM) {
+      const [a, b] = todo.pop();
+      for (const [dx, dz] of [[G, 0], [-G, 0], [0, G], [0, -G]]) {
+        const k = key(a + dx, b + dz); if (seen.has(k)) continue;
+        cam.x = a; cam.z = b; cam.y = keep[1]; floorY = keep[3];
+        if (tryStep(dx, dz)) { seen.add(k); todo.push([a + dx, b + dz]); }
+      }
+    }
+    [cam.x, cam.y, cam.z, floorY, blocked] = keep;
+    return seen;
+  }
+  // to the nearest spot with room around it, on this side of the walls if there is one.
+  // asked: by the visitor's button, then also out of a larger pocket
+  function escape(asked) {
+    const here = freeAround(cam.x, cam.z), trapped = here.size < ESCAPE_ROOM;
+    if (!asked && !trapped) return false;
+    const { W, cell, mask, outside } = planGrid, at = (x, z) => Math.floor(z / cell) * W + Math.floor(x / cell), side = outside[at(cam.x, cam.z)];
+    const crosses = (x, z) => { const d = Math.hypot(x - cam.x, z - cam.z), n = Math.ceil(d / 0.1); for (let i = 1; i <= n; i++) if (mask[at(cam.x + (x - cam.x) * i / n, cam.z + (z - cam.z) * i / n)]) return true; return false; };
+    let tried = 0;
+    for (const throughWalls of [false, true]) for (let r = asked ? 1.5 : 0.75; r <= 7; r += 0.75) for (let k = 0; k < 12; k++) {
+      const a = k / 12 * Math.PI * 2 + r, x = cam.x + Math.sin(a) * r, z = cam.z + Math.cos(a) * r;
+      if (x < world.minX || x > world.maxX || z < world.minZ || z > world.maxZ || mask[at(x, z)] || outside[at(x, z)] !== side) continue;
+      if (!throughWalls && crosses(x, z)) continue;
+      if (++tried > ESCAPE_TRIES) return false;
+      if (freeAround(x, z).size < ESCAPE_ROOM) continue;
+      cam.x = x; cam.z = z; anchorX = x; anchorZ = z; anchorT = performance.now();
+      if (visitor && visitor.relocated) visitor.relocated();
+      return true;
+    }
+    return false;
   }
 
   let lastWheel = 0;
@@ -2333,8 +2391,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         ['Tighten the strap at the back of your head until the headset sits still.', 'Image blurry? Move the headset slightly up or down.', 'Eye distance: slide the lenses sideways with two fingers, there are three positions.', 'Put the controller in your hand with the loop around your wrist.'],
         ['Zieh den Riemen am Hinterkopf fest, bis die Brille ruhig sitzt.', 'Bild unscharf? Schieb die Brille etwas nach oben oder unten.', 'Augenabstand: Schieb die Linsen mit zwei Fingern seitlich, es gibt drei Stellungen.', 'Nimm den Controller in die Hand, die Schlaufe ums Handgelenk.']) },
       { title: L('Moving', 'Bewegen'), lines: L(
-        ['Look around with your head. The lamp follows your gaze.', 'Stick forward or back: walk in the direction you are looking.', 'Stick left or right: turn.', 'Walls and objects are solid. You pass between rooms only through the veils of dust in the doors.', 'Outside, a trail of dust on the ground leads to the wine cellar.'],
-        ['Schau dich mit dem Kopf um. Die Lampe folgt deinem Blick.', 'Stick nach vorne oder hinten: gehen, dorthin, wohin du schaust.', 'Stick nach links oder rechts: drehen.', 'Wände und Gegenstände sind fest. In andere Räume kommst du nur durch die Schleier aus Staub in den Türen.', 'Draußen führt eine Spur aus Staub am Boden zum Weinkeller.']) },
+        ['Look around with your head. The lamp follows your gaze.', 'Stick forward or back: walk in the direction you are looking.', 'Stick left or right: turn.', 'Walls and objects are solid. You pass between rooms only through the veils of dust in the doors.', 'Outside, trails of dust on the ground lead around the house and to the wine cellar.', 'Stuck? Press B or Y and you are moved a little further on.'],
+        ['Schau dich mit dem Kopf um. Die Lampe folgt deinem Blick.', 'Stick nach vorne oder hinten: gehen, dorthin, wohin du schaust.', 'Stick nach links oder rechts: drehen.', 'Wände und Gegenstände sind fest. In andere Räume kommst du nur durch die Schleier aus Staub in den Türen.', 'Draußen führen Spuren aus Staub ums Haus und zum Weinkeller.', 'Steckst du fest? Drück B oder Y, dann wirst du ein Stück weiter versetzt.']) },
       { title: L('Taking samples', 'Proben entnehmen'), hand: true, lines: L(
         ['Samples are marked in orange and can only be seen from close by.', 'Look straight at a sample. When the hand appears, press the trigger with your index finger.', 'The sample goes into your inventory.', 'A or X: open or close the inventory.'],
         ['Proben sind orange markiert und erst aus der Nähe zu sehen.', 'Schau direkt auf eine Probe. Erscheint die Hand, drück den Abzug mit dem Zeigefinger.', 'Die Probe kommt in dein Inventar.', 'A oder X: Inventar öffnen oder schließen.']) },
@@ -2559,6 +2617,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     if (on && !xrPose.held[name]) action();
     xrPose.held[name] = on;
   }
+  let lastEscape = -1e9;
   function xrInput(dt, now, session) {
     const pads = [...session.inputSources].map((s) => s.gamepad).filter(Boolean);
     if (xrHud.guiding) { xrPressed(pads, BTN_TRIGGER, 'take', () => xrHud.guideNext()); return; }
@@ -2587,7 +2646,10 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       else if (visitor && !busy) visitor.take();
     });
     xrPressed(pads, BTN_INVENTORY, 'inventory', () => { if (!(visitor && visitor.debug.ended)) xrHud.toggleInventory(); });
-    xrPressed(pads, BTN_LEAVE, 'leave', () => { if (visitor && visitor.debug.ended && xrHud.endShown) session.end(); }); // back to the start screen: name, language
+    xrPressed(pads, BTN_LEAVE, 'leave', () => { // at the end back to the start screen (name, language); during the visit: out of where you are stuck
+      if (visitor && visitor.debug.ended) { if (xrHud.endShown) session.end(); }
+      else if (!busy && now - lastEscape > 3000) { lastEscape = now; escape(true); }
+    });
   }
   // before the frame's movement: where the head is now
   function xrBegin(dt, now) {
@@ -3247,12 +3309,15 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     dustAlong(curved([[11, 18.5], [12.4, 17.2], [11.6, 15.8], [13.2, 14.8], [14, 13.9], [14.235, 13.1]]), null, DUST_WAY_PER_M * 1.5); // the branch from the way around
     dustAlong([[23.45, 26.9], [23.85, 25.7], [23.85, 24.3]]); dustAlong([[23.4, 25.9], [23.6, 24.7]]); dustAlong([[24.3, 26.0], [24.1, 24.7]]);
     let outsideT = 0, backTrail = null, backDraw = 0, backFrom = null, backAlpha = 0;
-    const OUTSIDE_AMBIENT = 10, OUTSIDE_LAMP = 2.5, OUTSIDE_CONE = 0.7; let wasOutside = false, outK = 0, coneInside = 0;
+    const OUTSIDE_AMBIENT = 10, OUTSIDE_LAMP = 2.5, OUTSIDE_CONE = 0.7; let wasOutside = false, outK = 0, coneInside = 0, lastFloorRoom = null;
+    const ROOM_FLOORS = { R01: 'wood', R02: 'tile', R03: 'tile', R04: 'concrete', R05: 'earth', R06: 'soft', R07: 'paper', R08: 'paper', G01: 'narrow', G02: 'narrow', K01: 'earth', K02: 'earth' }; // what lies underfoot
     function wayBackTick(dt) {
       if (!way) return;
       const outside = !!planGrid.outside[Math.floor(cam.z / planGrid.cell) * planGrid.W + Math.floor(cam.x / planGrid.cell)];
       if (!ended && wallSlabs) wallSlabs.visible = !outside; // from outside the house shows the backs of its scans
       if (outside !== wasOutside) { wasOutside = outside; say('outside', outside); }
+      const room = roomAt(cam.x, cam.z);
+      if (room && room !== lastFloorRoom) { lastFloorRoom = room; say('floor', ROOM_FLOORS[room.code] || 'stone'); }
       // out in the open the lamp carries further and a little night light lies on the house
       outK += ((outside ? 1 : 0) - outK) * Math.min(1, dt * 1.2);
       shared.uAmbK.value = (xrActive ? XR_AMBIENT : (CONFIG.ambK ?? 1)) * (1 + OUTSIDE_AMBIENT * outK); shared.uBoost.value = OUTSIDE_LAMP * outK;
@@ -3470,6 +3535,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       get debug() { return { dir, dirWait, dirN, ended, entered, scanT }; },
       testStore(s) { s.state = 'inspect'; s.g.visible = false; store(s); }, // for testing only
       testEnd() { end('Access expired'); }, // for testing only
+      relocated() { banner(L('Position corrected', 'Position korrigiert')); say('crumble', 0.25); },
     };
   })() : null;
 
@@ -4376,7 +4442,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
   // Debug hook for building the piece (position + view); harmless in the final file.
   window.__room = {
-    cam, size, lamp, battery, moveBy, tick, visitor, camera, // tick: for testing with the pane hidden
+    cam, size, lamp, battery, moveBy, tick, visitor, camera, escape, freeAround, // tick: for testing with the pane hidden
     // distance + wall normal from a point in a direction
     ray(x, y, z, yaw, pitch = 0) {
       const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
