@@ -1204,7 +1204,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 // The libraries and the scan are embedded (no network requests at all), so the
 // piece keeps working as long as this one file exists.
 (async function () {
-  const CONFIG = {"rooms": [{"file": "K01", "x": 12.301, "z": 8.55, "rot": 90, "floor": -1.35, "clip": [9.9, 5.9, 14.42, 13.1], "scale": 1.02, "cut": [9, 10.65, 12.3, 14]}, {"file": "K02", "x": 16.672, "z": 8.306, "rot": 180, "floor": -1.2, "clip": [14.38, 5.9, 19.0, 13.1], "scale": 1.06, "cut": [16.1, 10.5, 20, 14]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.25, 20.0, 15.85, 30.55]}, {"file": "R03", "x": 19.47, "z": 22.232, "rot": 90, "floor": -1.25, "clip": [15.5, 19.9, 26.7, 24.75], "scale": 1.16, "cut": [23.55, 19, 27, 22.7]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.6, 24.4, 24.6, 30.5]}, {"file": "R04", "x": 30.72, "z": 27.48, "rot": 270, "floor": -1.75, "clip": [24.5, 24.7, 35.55, 30.55], "cut": [30.9, 24, 36, 26.05]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.5, 25.95, 42.85, 30.55]}, {"file": "R07", "x": 39.337, "z": 23.13, "rot": 90, "floor": -1.45, "clip": [35.75, 19.85, 42.85, 26.15], "scale": 1.08, "cut": [35, 24.8, 38.65, 27]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.6, 38.65, 26.3]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [26.7, 22.7, 33.3, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [35.45, 26.0, 37.6, 30.55]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.2, 20.1, 33.3, 23.25]}], "plan": {"size": [47.62, 33.63], "walls": [[10.12, 10.48, 10.18, 6.15], [10.12, 6.19, 18.77, 6.15], [14.38, 6.36, 14.4, 10.69], [18.75, 10.46, 18.77, 6.17], [15.87, 10.37, 18.81, 10.33], [15.89, 12.77, 15.91, 10.31], [10.16, 10.5, 12.39, 10.44], [12.45, 12.9, 12.45, 10.56], [12.41, 12.88, 13.45, 12.88], [15.0, 12.83, 15.91, 12.79], [3.8, 20.51, 20.83, 20.08], [35.89, 20.07, 36.06, 24.5], [35.91, 20.04, 42.51, 20.04], [42.49, 20.0, 42.66, 30.29], [3.5, 20.49, 3.78, 30.29], [15.67, 26.83, 15.74, 20.19], [22.48, 20.19, 23.33, 20.19], [23.26, 20.18, 23.42, 22.82], [31.31, 20.3, 33.11, 20.28], [31.33, 23.08, 31.37, 20.45], [33.17, 24.82, 33.17, 20.3], [23.38, 22.87, 31.1, 22.84], [15.72, 23.46, 17.92, 23.42], [17.78, 23.4, 17.86, 26.83], [23.1, 26.83, 23.1, 24.33], [17.77, 24.56, 23.12, 24.44], [24.44, 24.84, 28.51, 24.82], [24.48, 24.71, 24.56, 28.36], [32.39, 24.78, 36.42, 24.71], [30.76, 25.11, 30.86, 26.26], [38.55, 26.08, 42.61, 26.01], [30.8, 26.14, 35.38, 26.2], [35.4, 26.13, 35.7, 30.33], [37.46, 26.09, 37.65, 30.33], [15.48, 26.79, 17.9, 26.79], [15.72, 30.29, 15.78, 28.38], [23.1, 30.18, 23.12, 28.42], [3.56, 30.23, 23.23, 30.23], [24.75, 30.3, 42.66, 30.37], [20.83, 20.08, 20.94, 20.2], [31.1, 22.85, 31.37, 22.85], [31.35, 23.1, 32.05, 23.1], [32.92, 23.1, 33.17, 23.1], [28.51, 24.82, 29.25, 25.05], [24.56, 29.9, 24.6, 30.3], [36.42, 24.71, 36.63, 24.68], [36.06, 24.5, 36.06, 24.71], [35.38, 26.2, 35.64, 26.13], [37.16, 26.1, 37.5, 26.05], [3.5, 20.49, 3.8, 20.51], [14.21, 10.45, 14.4, 10.45], [14.38, 6.17, 14.38, 6.36], [10.12, 6.15, 10.12, 6.2], [18.77, 10.33, 18.77, 10.46], [42.51, 20.04, 42.49, 20.0], [30.78, 25.11, 30.76, 25.11], [38.16, 24.68, 38.6, 24.68], [38.6, 24.68, 38.6, 26.05]], "doors": [[15.21, 10.34, 1.52, "x"], [13.31, 10.45, 1.8, "x"], [14.235, 12.9, 1.53, "x"], [21.7, 20.27, 1.52, "x"], [32.485, 23.11, 0.87, "x"], [23.85, 24.68, 1.42, "x"], [37.395, 24.68, 1.53, "x"], [30.015, 25.09, 1.53, "x"], [38.0, 26.05, 1.05, "x"], [36.4, 26.13, 1.52, "x"], [15.72, 27.59, 1.52, "z"], [23.22, 27.59, 1.52, "z"], [24.56, 29.125, 1.55, "z"], [23.99, 30.28, 1.52, "x"]], "exit": [21.7, 20.27], "exits": [[23.99, 30.28]], "cellarDoor": [14.235, 12.9]}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": ["N01"]}};
+  const CONFIG = {"rooms": [{"file": "K01", "x": 12.315, "z": 8.58, "rot": 90, "floor": -1.35, "clip": [9.9, 5.9, 14.42, 13.1], "cut": [9, 10.65, 12.3, 14]}, {"file": "K02", "x": 16.668, "z": 8.36, "rot": 180, "floor": -1.2, "clip": [14.38, 5.9, 19.0, 13.1], "cut": [16.1, 10.5, 20, 14]}, {"file": "R01", "x": 10, "z": 25.04, "rot": 270, "floor": -1.25, "clip": [3.25, 20.0, 15.85, 30.55]}, {"file": "R03", "x": 19.726, "z": 22.246, "rot": 90, "floor": -1.25, "clip": [15.5, 19.9, 26.7, 24.75], "cut": [23.55, 19, 27, 22.7]}, {"file": "R02", "x": 20.41, "z": 27.57, "rot": 90, "floor": -1.2, "clip": [15.6, 24.4, 24.6, 30.5]}, {"file": "R04", "x": 30.72, "z": 27.48, "rot": 270, "floor": -1.75, "clip": [24.5, 24.7, 35.55, 30.55], "cut": [30.9, 24, 36, 26.05]}, {"file": "R06", "x": 39.9, "z": 28.09, "rot": 270, "floor": -1.3, "clip": [37.5, 25.95, 42.85, 30.55]}, {"file": "R07", "x": 39.337, "z": 23.137, "rot": 90, "floor": -1.45, "clip": [35.75, 19.85, 42.85, 26.15], "cut": [35, 24.8, 38.65, 27]}, {"file": "G01", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [31.15, 24.6, 38.65, 26.3]}, {"file": "G02", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.2, "clip": [26.3, 22.7, 33.3, 25.25]}, {"file": "R05", "x": 33.3, "z": 23.3, "rot": 90, "floor": -1.15, "clip": [35.45, 26.0, 37.6, 30.55]}, {"file": "N01", "x": 33.99, "z": 22.75, "rot": 90, "floor": -1.2, "clip": [31.2, 20.1, 33.3, 23.25], "name": "R08"}], "plan": {"size": [47.62, 33.63], "walls": [[10.12, 10.48, 10.18, 6.15], [10.12, 6.19, 18.77, 6.15], [14.38, 6.36, 14.4, 10.69], [18.75, 10.46, 18.77, 6.17], [15.87, 10.37, 18.81, 10.33], [15.89, 12.77, 15.91, 10.31], [10.16, 10.5, 12.39, 10.44], [12.45, 12.9, 12.45, 10.56], [12.41, 12.88, 13.45, 12.88], [15.0, 12.83, 15.91, 12.79], [3.8, 20.51, 20.83, 20.08], [35.89, 20.07, 36.06, 24.5], [35.91, 20.04, 42.51, 20.04], [42.49, 20.0, 42.66, 30.29], [3.5, 20.49, 3.78, 30.29], [15.67, 26.83, 15.74, 20.19], [22.48, 20.19, 23.33, 20.19], [23.26, 20.18, 23.42, 22.82], [31.31, 20.3, 33.11, 20.28], [31.33, 23.08, 31.37, 20.45], [33.17, 24.82, 33.17, 20.3], [23.38, 22.87, 31.1, 22.84], [15.72, 23.46, 17.92, 23.42], [17.78, 23.4, 17.86, 26.83], [23.1, 26.83, 23.1, 24.33], [17.77, 24.56, 23.12, 24.44], [24.44, 24.84, 28.51, 24.82], [24.48, 24.71, 24.56, 28.36], [32.39, 24.78, 36.42, 24.71], [30.76, 25.11, 30.86, 26.26], [38.55, 26.08, 42.61, 26.01], [30.8, 26.14, 35.38, 26.2], [35.4, 26.13, 35.7, 30.33], [37.46, 26.09, 37.65, 30.33], [15.48, 26.79, 17.9, 26.79], [15.72, 30.29, 15.78, 28.38], [23.1, 30.18, 23.12, 28.42], [3.56, 30.23, 23.23, 30.23], [24.75, 30.3, 42.66, 30.37], [20.83, 20.08, 20.94, 20.2], [31.1, 22.85, 31.37, 22.85], [31.35, 23.1, 32.05, 23.1], [32.92, 23.1, 33.17, 23.1], [28.51, 24.82, 29.25, 25.05], [24.56, 29.9, 24.6, 30.3], [36.42, 24.71, 36.63, 24.68], [36.06, 24.5, 36.06, 24.71], [35.38, 26.2, 35.64, 26.13], [37.16, 26.1, 37.5, 26.05], [3.5, 20.49, 3.8, 20.51], [14.21, 10.45, 14.4, 10.45], [14.38, 6.17, 14.38, 6.36], [10.12, 6.15, 10.12, 6.2], [18.77, 10.33, 18.77, 10.46], [42.51, 20.04, 42.49, 20.0], [30.78, 25.11, 30.76, 25.11], [38.16, 24.68, 38.6, 24.68], [38.6, 24.68, 38.6, 26.05]], "doors": [[15.21, 10.34, 1.52, "x"], [13.31, 10.45, 1.8, "x"], [14.235, 12.9, 1.53, "x"], [21.7, 20.27, 1.52, "x"], [32.485, 23.11, 0.87, "x"], [23.85, 24.68, 1.42, "x"], [37.395, 24.68, 1.53, "x"], [30.015, 25.09, 1.53, "x"], [38.0, 26.05, 1.05, "x"], [36.4, 26.13, 1.52, "x"], [15.72, 27.59, 1.52, "z"], [23.22, 27.59, 1.52, "z"], [24.56, 29.125, 1.55, "z"], [23.99, 30.28, 1.52, "x"]], "exit": [21.7, 20.27], "exits": [[23.99, 30.28]], "cellarDoor": [14.235, 12.9]}, "start": {"x": 12.5, "z": 25.0, "yaw": 1.5708, "pitch": -0.1}, "eye": 1.6, "portraitYaw": 0, "rimMin": 0.8, "render": "mesh", "handLamp": true, "radius": 0.18, "ambK": 6.0, "portals": 0.9, "highBeam": true, "lampFloor": 0.45, "outerWallsOnly": true, "photoKey": true, "glass": [], "samples": {"total": 48, "perRoom": 4, "seed": 7, "minutes": 10, "skip": []}};
 
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -1891,7 +1891,6 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       holder.add(inner);
       holder.rotation.y = -r.rot * Math.PI / 180;
       holder.position.set(r.x, 0, r.z);
-      holder.scale.setScalar(r.scale || 1);
       holder.userData.room = r.file;
       model.add(holder);
       progress(0.05 + 0.6 * (i + 1) / CONFIG.rooms.length);
@@ -2171,7 +2170,19 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     }
     collide.updateMatrixWorld(true); hard.updateMatrixWorld(true);
     window.__walls = { geo: wg, W, H, cell, mask: m, scanTris: collide.children[2] ? collide.children[2].geometry.getAttribute('position').count / 3 : 0 }; // for checking (local tool)
-    planGrid = { W, H, cell, mask: m };
+    // what lies outside the house: everything reached from the plan's corner with the doors shut
+    const outside = new Uint8Array(W * H);
+    {
+      const shut = m.slice();
+      for (const d of doors) {
+        const hx = d.along === 'x' ? d.w / 2 + 0.1 : 0.2, hz = d.along === 'x' ? 0.2 : d.w / 2 + 0.1;
+        for (let y = Math.floor((d.z - hz) / cell); y <= (d.z + hz) / cell; y++) for (let x = Math.floor((d.x - hx) / cell); x <= (d.x + hx) / cell; x++) shut[y * W + x] = 1;
+      }
+      const st = [0]; outside[0] = 1;
+      while (st.length) { const j = st.pop(), x = j % W;
+        for (const n of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, j - W, j + W]) if (n >= 0 && n < W * H && !shut[n] && !outside[n]) { outside[n] = 1; st.push(n); } }
+    }
+    planGrid = { W, H, cell, mask: m, outside };
   })();
   const hbox = new THREE.Box3().setFromObject(model);
   const size = hbox.getSize(new THREE.Vector3());
@@ -2548,7 +2559,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
     // --- rooms, and where the samples lie: on level surfaces, 4 per room, one pair close together ---
     const skip = CONFIG.samples.skip || [];
-    const rooms = CONFIG.rooms.map((r, i) => ({ code: r.file, holder: model.children[i], c: r.clip || [-1e9, -1e9, 1e9, 1e9], cut: r.cut }))
+    const rooms = CONFIG.rooms.map((r, i) => ({ code: r.name || r.file, holder: model.children[i], c: r.clip || [-1e9, -1e9, 1e9, 1e9], cut: r.cut }))
       .filter((o) => !skip.includes(o.code));
     const inCut = (o, x, z) => o.cut && x > o.cut[0] && z > o.cut[1] && x < o.cut[2] && z < o.cut[3];
     const roomAt = (x, z) => rooms.find((o) => x > o.c[0] && x < o.c[2] && z > o.c[1] && z < o.c[3] && !inCut(o, x, z)) || null;
@@ -3068,7 +3079,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       const rubble = new THREE.Points(g, new THREE.PointsMaterial({ color: 0x5c554c, size: 0.014 })); scene.add(rubble); doorDebris.push(rubble);
       const shutWall = new THREE.Mesh(new THREE.PlaneGeometry(w, 4.8), wallMat); shutWall.position.set(d.x, 2.1, d.z); if (d.along === 'z') shutWall.rotation.y = Math.PI / 2; // nothing to see through it now
-      shutWall.renderOrder = -1; scene.add(shutWall); doorDebris.push(shutWall);
+      shutWall.renderOrder = -1; wallSlabs.add(shutWall); doorDebris.push(shutWall);
       debris(d.x, 0, d.z, w, 1.5); say('crumble', 1); setTimeout(() => say('lost'), 250);
       const R = roomAt(d.x + (d.along === 'x' ? 0 : 0.6), d.z + (d.along === 'x' ? 0.6 : 0)) || roomAt(d.x, d.z);
       log('ROUTE COLLAPSED' + (R ? ' / ' + short(R.code) : ''), true); banner('Route collapsed', 'this way is gone', true);
@@ -3112,8 +3123,6 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     }
     // how far every spot outside is from the way in (keeping off the walls)
     const CLEARANCE = 0.6, RETURN_AFTER = 45, RETURN_REDRAW = 5, RETURN_MOVED = 4, WAY_STEP = 6; // WAY_STEP: cells between trail points
-    const HOUSE = [3.3, 19.9, 42.9, 30.6], CELLAR = [9.9, 5.9, 19, 13.1];
-    const inBox = (b, x, z) => x > b[0] && x < b[2] && z > b[1] && z < b[3];
     const way = (() => {
       const exit = CONFIG.plan.exit; if (!planGrid || !exit) return null;
       const { W, H, cell, mask } = planGrid, R = Math.ceil(CLEARANCE / cell), wall = new Uint8Array(W * H), dist = new Int32Array(W * H).fill(-1);
@@ -3158,7 +3167,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     let outsideT = 0, backTrail = null, backDraw = 0, backFrom = null, backAlpha = 0;
     function wayBackTick(dt) {
       if (!way) return;
-      const outside = !inBox(HOUSE, cam.x, cam.z) && !inBox(CELLAR, cam.x, cam.z);
+      const outside = !!planGrid.outside[Math.floor(cam.z / planGrid.cell) * planGrid.W + Math.floor(cam.x / planGrid.cell)];
+      if (!ended && wallSlabs) wallSlabs.visible = !outside; // from outside the house shows the backs of its scans
       outsideT = outside ? outsideT + dt : 0;
       const showing = outsideT > RETURN_AFTER;
       if (showing && (backDraw -= dt) <= 0) {
