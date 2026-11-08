@@ -610,7 +610,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   // ---------- outside, at night: only noise, no tones ----------
   // Wind in the open and in leaves that drifts irregularly, now and then a rustle, crickets
   // made of narrow bursts of noise. Quiet, under the steps.
-  const NIGHT_WIND = 0.0055, INSIDE_WIND = 0, NIGHT_AIR = 0.0014, OWL = 0.05, CRICKET = 0.0012, STEP_OUTSIDE = 0.28, RUSTLE = 0.2, DOOR_AIR = 0.012;
+  const NIGHT_WIND = 0.0055, INSIDE_WIND = 0, NIGHT_AIR = 0.0006, OWL = 0.05, CRICKET = 0.0012, STEP_OUTSIDE = 0.28, RUSTLE = 0.2, DOOR_AIR = 0.012;
   function drifting(gain, level) {
     (function walk() {
       if (ctx.state === 'running') {
@@ -640,7 +640,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // (more of the higher air). Everything follows smooth curves, nothing ramps evenly.
     // the open night itself: a soft, wide rush of air that is always there outside, never inside
     const open = ctx.createBufferSource(); open.buffer = pinkBuf; open.loop = true; open.playbackRate.value = 0.91;
-    const oh = ctx.createBiquadFilter(); oh.type = 'highpass'; oh.frequency.value = 220; const ol = ctx.createBiquadFilter(); ol.type = 'lowpass'; ol.frequency.value = 2600;
+    const oh = ctx.createBiquadFilter(); oh.type = 'highpass'; oh.frequency.value = 90; const ol = ctx.createBiquadFilter(); ol.type = 'lowpass'; ol.frequency.value = 900; // low and soft, no hiss
     const og = ctx.createGain(); og.gain.value = NIGHT_AIR; open.connect(oh); oh.connect(ol); ol.connect(og); og.connect(nightBus); open.start(0, rand(0, 13)); drifting(og, NIGHT_AIR);
     const body = ctx.createBufferSource(); body.buffer = brownBuffer(17); body.loop = true;
     const bl = ctx.createBiquadFilter(); bl.type = 'lowpass'; bl.frequency.value = 260; bl.Q.value = 0.3;
@@ -2281,6 +2281,14 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       }
     }
     const doors = CONFIG.plan.doors.map(([x, z, w, along]) => ({ x, z, w, along }));
+    // a door narrowed to its frame: the rest of the gap in the wall line is closed, up to the wall's own end
+    const before = m.slice();
+    for (const d of doors) for (const sd of [1, -1]) for (let u = d.w / 2 + 0.02; u < d.w / 2 + 1.0; u += 0.02) {
+      const x = d.along === 'x' ? d.x + sd * u : d.x, z = d.along === 'x' ? d.z : d.z + sd * u, j = Math.floor(z / cell) * W + Math.floor(x / cell);
+      let wall = false; for (let a = -2; a <= 2; a++) if (before[d.along === 'x' ? j + a * W : j + a]) wall = true;
+      for (let a = -2; a <= 2; a++) m[d.along === 'x' ? j + a * W : j + a] = 1;
+      if (wall) break; // reached the wall's own end
+    }
     window.__doors = doors;
     // portals: in every doorway of the plan a veil of fine glowing dust, rising slowly
     // and twinkling, so the ways on can be seen from afar in the dark
@@ -2353,16 +2361,17 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; w.xyz += normalize(w.xyz - cameraPosition) * ${WALL_BEHIND.toFixed(2)}; gl_Position = projectionMatrix * viewMatrix * w; }`,
       // black, as before. From outside it is there only close by: a hole in the wall closes before you,
       // fraying at its rim; further off the backs of the scans show
-      uniforms: { uOut: { value: 0 } },
-      fragmentShader: `uniform float uOut; varying vec3 vW;
+      uniforms: { uOut: { value: 0 }, uOnlyOut: { value: 0 } },
+      fragmentShader: `uniform float uOut, uOnlyOut; varying vec3 vW;
         float h(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
         void main(){
+          if (uOnlyOut > 0.5 && uOut < 0.5) discard; // a piece with no scan in front: from outside only
           if (uOut > 0.5 && distance(vW.xz, cameraPosition.xz) > ${WALL_SEEN_OUTSIDE.toFixed(1)} - 0.9 * h(floor(vW * 40.0))) discard;
           gl_FragColor = vec4(vec3(0.015), 1.0);
         }`,
     });
     {
-      const P = [], I = [], low = -0.3, high = 4.5;
+      const P = [], I = [], P2 = [], I2 = [], low = -0.3, high = 4.5;
       // shown only where a scan stands in front of it: there it closes the scan's holes. Where no scan
       // was made at all, a black wall would just be a black wall; there it stops you but is not drawn.
       const look = new THREE.Raycaster(); look.firstHitOnly = false;
@@ -2376,13 +2385,16 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           const x0 = ax + (bx - ax) * k / n, z0 = az + (bz - az) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, z1 = az + (bz - az) * (k + 1) / n, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
           let seen = 0;
           for (const y of [0.6, 1.2, 1.8]) for (const sd of [1, -1]) if (scanAt(mx + nx * sd * 0.7, y, mz + nz * sd * 0.7, -nx * sd, -nz * sd)) seen++;
-          if (seen < 2) { hidden++; continue; }
+          if (seen < 2) { hidden++; const b = P2.length / 3; P2.push(x0, low, z0, x1, low, z1, x1, high, z1, x0, high, z0); I2.push(b, b + 1, b + 2, b, b + 2, b + 3); continue; } // from outside it still closes the hole
           const b = P.length / 3; P.push(x0, low, z0, x1, low, z1, x1, high, z1, x0, high, z0); I.push(b, b + 1, b + 2, b, b + 2, b + 3);
         }
       }
       window.__wallPiecesHidden = hidden;
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I);
-      wallSlabs = new THREE.Mesh(g, wallMat); wallSlabs.frustumCulled = false; wallSlabs.renderOrder = -1; scene.add(wallSlabs);
+      wallSlabs = new THREE.Mesh(g, wallMat); wallSlabs.frustumCulled = false; wallSlabs.renderOrder = -1; wallSlabs.userData.wall = true; scene.add(wallSlabs);
+      const outerMat = wallMat.clone(); outerMat.uniforms.uOut = wallMat.uniforms.uOut; outerMat.uniforms.uOnlyOut = { value: 1 };
+      const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(P2, 3)); g2.setIndex(I2);
+      const outer = new THREE.Mesh(g2, outerMat); outer.frustumCulled = false; outer.renderOrder = -1; outer.userData.wall = true; wallSlabs.add(outer);
     }
     if (CONFIG.outerWallsOnly) {
       // what you bump into inside: each scan's walls and furniture from knee height up
@@ -3740,7 +3752,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         dots.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xe1681c, transparent: true, opacity: 0.55 })));
       }
       falls.forEach((f) => (f.pts.visible = false));
-      scene.traverse((o) => { if (o.material === wallMat || (o.userData && o.userData.label)) o.visible = false; }); // the plan shows the scans alone
+      scene.traverse((o) => { if (o.material === wallMat || (o.userData && (o.userData.label || o.userData.wall))) o.visible = false; }); // the plan shows the scans alone
       scene.traverse((o) => { if (o.isPoints && o.material.uniforms && o.material.uniforms.uStrength) o.visible = false; }); // no veils or dust trail on the plan
       shared.uSpotOn.value = 0; shared.uBeamRadius.value = 1e5; shared.uBoost.value = 0; lightK = 1;
       if (xrActive) {
