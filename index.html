@@ -264,7 +264,7 @@ html,body{margin:0;height:100%;background:#050505;color:#fff;overflow:hidden;ove
     <div class="gate-sub mono" id="gateSub">Flashlight enabled<br>Visitor access 07:00<br>Material inventory 0 / 48<br>Objective: recover all material samples</div>
     <div class="gate-form mono">
       <div class="gate-lang"><button type="button" data-lang="de">Deutsch</button><button type="button" data-lang="en">English</button></div>
-      <label><span id="nameLabel">Name</span><input id="visitorName" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label>
+      <label style="display:none"><span id="nameLabel">Name</span><input id="visitorName" type="text" maxlength="24" autocomplete="off" spellcheck="false"></label><!-- no name any more: every visitor gets a number (13.11.) -->
     </div>
     <div class="loader">
       <div class="bar-label mono"><span id="loadText">Entering room</span><span id="loadPct">0%</span></div>
@@ -1440,15 +1440,22 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     if (!enterBtn.disabled) enterBtn.textContent = enterLabel();
   }
   document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => applyLang(b.dataset.lang)));
-  let xrOK = false, xrActive = false;
+  let xrOK = false, xrActive = false, xrBuilt = false;
   const questMode = () => xrOK || XRSIM;
   function enterReady() { enterBtn.disabled = false; enterBtn.textContent = enterLabel(); }
   const xrCheck = navigator.xr && !XRSIM ? navigator.xr.isSessionSupported('immersive-vr').catch(() => false) : Promise.resolve(false);
   if (navigator.xr && !XRSIM) enterBtn.disabled = true;
   applyLang(LANG);
   xrCheck.then((yes) => { xrOK = yes; if (!yes) enterReady(); });
+  let gateStarted = false;
   enterBtn.addEventListener('click', () => {
-    visitorName = nameInput.value.trim().slice(0, 24);
+    if (entered) { // back from outside VR (Meta button, headset slept): the house is loaded, straight in again
+      if (questMode()) xrStart();
+      if (window.RoomSound) RoomSound.enable();
+      gate.classList.add('gone'); return;
+    }
+    if (gateStarted || (questMode() && typeof window.__test !== 'object' && !xrOK)) return; // once; and not before the house is there
+    gateStarted = true;
     if (questMode()) xrStart();
     // sound must start inside the click (browser rule); it fades in slowly
     if (window.RoomSound) RoomSound.enable();
@@ -1472,7 +1479,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       }
       setTimeout(tick, 30);
     })();
-  }, { once: true });
+  });
   const frame = () => new Promise((r) => setTimeout(r, 0));
 
   // ---------- libraries: unpack and link them up as modules ----------
@@ -1520,6 +1527,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const RENDER = CONFIG.render || (MOBILE || /[?&](mesh|vr)\b/.test(location.search) ? 'mesh' : 'mix');
 
   // ---------- shaders (flashlight) ----------
+  const LAMP_REACH = 0.62; // how the lamp fades with distance (1 = as before; 13.11.: carries a little further)
   const LIGHT = `
     uniform float uBeamRadius;
     uniform vec2 uLightPos;
@@ -1540,7 +1548,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         // weaker far away, and surfaces turned away from the lamp get less
         vec3 L = uSpotPos - gWorld; float dist = max(length(L), 0.05); vec3 l = L / dist;
         d = acos(clamp(dot(-l, uSpotDir), -1.0, 1.0)) / uSpotAng * uBeamRadius;
-        fall = clamp(6.0 / (0.6 + dist * dist), 0.0, 4.0) * (0.35 + 0.65 * max(dot(n, l), 0.0));
+        fall = clamp(6.0 / (0.6 + dist * dist * ${LAMP_REACH.toFixed(2)}), 0.0, 4.0) * (0.35 + 0.65 * max(dot(n, l), 0.0)); // reach: < 1 carries further
       }
       float outer = 1.0 - smoothstep(uBeamRadius * 0.12, uBeamRadius * 1.12, d);
       float mid = 1.0 - smoothstep(uBeamRadius * 0.00, uBeamRadius * 0.60, d);
@@ -2528,6 +2536,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
   const WALK_DEAD = 0.15, TURN_DEAD = 0.2, TURN_SPEED = 1.0; // radians per second at full push
   const BTN_TRIGGER = 0, BTN_GRIP = 1, BTN_STICK = 3, BTN_A = 4, BTN_B = 5; // one controller is enough: the right one, with A and B
   const HUD_DISTANCE = 1.25, HUD_FOLLOW = 3, FOVEATED_RATE = 72, XR_POINT_SCALE = 950;
+  const INSPECT_HOLD = 3200, TAKEN_HOLD = 4500; // ms: the conserved sample stays in view, its message stays up (13.11.: longer, so it can be read)
   const INSPECT_DISTANCE = 0.36, INSPECT_DROP = 0.34, INSPECT_SCALE = 2, INSPECT_SEEN = 0.11; // INSPECT_SEEN: a small cube is shown about this big (m) // held below the eyes, so one looks onto the block's face
   const XR_SETTLE_FRAMES = 30;
   const CORNER_WIDTH = 0.3, CORNER_X = -0.42, CORNER_Y = 0.34, HINT_ABOVE = 0.24, HINT_SIZE_AT = 1.5;
@@ -2567,11 +2576,29 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         ['Drück die Taste unter deinem Zeigefinger, um weiterzuklicken oder etwas im Raum aufzuheben.', 'Beweg den Stick nach vorne oder hinten, um vor- oder zurückzugehen. Beweg ihn nach links oder rechts, um dich zu drehen.',
           'Wenn du irgendwo feststeckst, drück A. Du wirst an eine andere Stelle versetzt.', 'Drück B zweimal hintereinander, um neu zu starten.', 'Seitliche Taste am Griff: diese Bedienung nochmal ansehen.']) },
       { title: L('The headset', 'Die Brille'), draw: 'headset', lines: L(
-        ['Tighten the strap at the back until the headset feels secure and comfortable.', 'Is the image blurry? Move the headset slightly up or down.', 'You can also adjust the distance between the lenses until the image looks sharp.'],
-        ['Zieh den Riemen hinten fest, bis die Brille bequem und sicher sitzt.', 'Ist das Bild unscharf? Verschieb die Brille etwas nach oben oder unten.', 'Du kannst auch den Abstand der Linsen seitlich anpassen, bis du scharf siehst.']) },
+        ['Tighten the strap at the back until the headset feels secure and comfortable.', 'Is the image blurry? Move the headset slightly up or down.', 'You can also adjust the distance between the lenses until the image looks sharp.',
+          'Stay where you are: you walk with the stick. If you suddenly see the real room, you have moved too far – step back.'],
+        ['Zieh den Riemen hinten fest, bis die Brille bequem und sicher sitzt.', 'Ist das Bild unscharf? Verschieb die Brille etwas nach oben oder unten.', 'Du kannst auch den Abstand der Linsen seitlich anpassen, bis du scharf siehst.',
+          'Bleib an deinem Platz: Du gehst mit dem Stick. Siehst du plötzlich den echten Raum, bist du zu weit gegangen – geh einen Schritt zurück.']) }, // the last line: 13.11.
       { title: L('Ready?', 'Bereit?'), draw: null, lines: L(['Press the button under your index finger to start VISITOR MODE.'], ['Drück die Taste unter deinem Zeigefinger, um VISITOR MODE zu starten.']) },
     ];
     let helpOnly = false; // during the visit (side button): only the controls, then back
+    let pausing = false; // nothing happened for a while, or the headset was taken off
+    function drawPause() {
+      const { g, w, h } = guideP, t = performance.now() / 1000; guideDrawn = t;
+      g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(5,5,5,.92)'; g.fillRect(0, 0, w, h);
+      g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = 'bold 64px Arial'; g.fillText(L('PAUSE', 'PAUSE'), 56, 100);
+      drawController(g, t);
+      const pulse = 0.55 + 0.45 * Math.sin(t * 5); // B glows too
+      g.lineWidth = 6; g.strokeStyle = `rgba(225,104,28,${pulse})`; g.beginPath(); g.arc(360, 300, 34, 0, Math.PI * 2); g.stroke(); g.lineWidth = 4;
+      const rows = [[L('INDEX FINGER BUTTON', 'ZEIGEFINGER-TASTE'), L('continue', 'weiterspielen')], ['B', L('start again – for the next person', 'neu starten – für die nächste Person')]];
+      let y = 610;
+      for (const [k, v] of rows) { g.fillStyle = ORANGE; g.font = 'bold 44px Arial'; g.fillText(k, 56, y); g.fillStyle = '#fff'; g.font = '40px Arial'; g.fillText(v, 56, y + 54, w - 112); y += 150; }
+      const bh = 92, by = h - bh - 36; g.fillStyle = ORANGE; g.fillRect(56, by, w - 112, bh);
+      g.fillStyle = '#000'; g.font = 'bold 36px Arial'; g.textAlign = 'center';
+      g.fillText(L('INDEX FINGER: CONTINUE  ·  B: RESTART', 'ZEIGEFINGER: WEITER  ·  B: NEUSTART'), w / 2, by + 58, w - 140); g.textAlign = 'left';
+      guideP.tex.needsUpdate = true;
+    }
     const ORANGE = '#e1681c';
     function arrow(g, x0, y0, x1, y1, col) { const a = Math.atan2(y1 - y0, x1 - x0); g.strokeStyle = col; g.fillStyle = col; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
       g.beginPath(); g.moveTo(x1, y1); g.lineTo(x1 - 16 * Math.cos(a - 0.5), y1 - 16 * Math.sin(a - 0.5)); g.lineTo(x1 - 16 * Math.cos(a + 0.5), y1 - 16 * Math.sin(a + 0.5)); g.fill(); }
@@ -2774,8 +2801,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       },
       get endShown() { return !!(plan && plan.t >= END_HOLD + END_DECAY + END_DOTS + END_MOVE); },
       endSkip() { if (plan && plan.t !== undefined) plan.t = END_HOLD + END_DECAY + END_DOTS + END_MOVE; }, // the trigger while it plays
-      guideStart(help = false) { helpOnly = help; guidePage = 0; drawGuide(); },
+      guideStart(help = false) { helpOnly = help; pausing = false; guidePage = 0; drawGuide(); },
       get guiding() { return guidePage >= 0; },
+      get paused() { return pausing; },
+      pauseShow() { if (!guideP || pausing || guidePage >= 0) return; pausing = true; showInventory = false; peekT = 0; if (bannerP) bannerP.mesh.visible = false; drawPause(); },
+      resume() { pausing = false; },
       get helping() { return guidePage >= 0 && helpOnly; },
       guideNext() { if (++guidePage >= (helpOnly ? 1 : GUIDE().length)) { guidePage = -1; helpOnly = false; } else drawGuide(); },
       // a new visit from the end screen, without leaving VR
@@ -2810,8 +2840,9 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         root.position.lerp(xrOffset, 1 - Math.exp(-dt * HUD_FOLLOW));
         root.lookAt(viewPos);
         if (peekT > 0) peekT -= dt;
-        guideP.mesh.visible = entered && guidePage >= 0;
-        if (guidePage >= 0 && performance.now() / 1000 - guideDrawn > 0.06) drawGuide(); // the drawings move a little
+        guideP.mesh.visible = entered && (guidePage >= 0 || pausing);
+        if (pausing) { if (performance.now() / 1000 - guideDrawn > 0.06) drawPause(); }
+        else if (guidePage >= 0 && performance.now() / 1000 - guideDrawn > 0.06) drawGuide(); // the drawings move a little
         const inspecting = !!(visitor && visitor.inspecting);
         inventoryP.mesh.visible = (showInventory || peekT > 0) && !inspecting;
         inspectP.mesh.visible = inspecting;
@@ -2823,7 +2854,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
 
   function xrStart() {
     xrActive = true; window.__xrActive = true;
-    xrHud.build();
+    if (!xrBuilt) { xrBuilt = true; xrHud.build(); } else if (visitor) visitor.reset(); // again: a new visitor, the guide first
     // until now the camera stood directly in the room; from here on it rides on the rig
     camera.position.set(0, CONFIG.eye, 0); camera.rotation.set(0, 0, 0);
     rig.rotation.y = XRSIM ? 0 : -cam.yaw;
@@ -2832,7 +2863,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     shared.uScale.value = XR_POINT_SCALE;
     if (XRSIM) return;
     navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] }).then(async (session) => {
-      session.addEventListener('end', () => location.reload());
+      session.addEventListener('end', xrLeft); // no reload: the scans stay loaded (13.11.)
+      session.addEventListener('visibilitychange', () => { if (session.visibilityState !== 'visible') xrHud.pauseShow(); }); // headset off, Meta menu: pause
       await renderer.xr.setSession(session);
       if (session.updateTargetFrameRate && session.supportedFrameRates && session.supportedFrameRates.includes(FOVEATED_RATE)) await session.updateTargetFrameRate(FOVEATED_RATE);
     }).catch((err) => { // no VR after all: back to the screen version
@@ -2840,14 +2872,33 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       rig.position.set(0, 0, 0); rig.rotation.set(0, 0, 0);
     });
   }
+  // left VR (Meta button, headset asleep): the start screen with its button, nothing is loaded again
+  function xrLeft() {
+    xrActive = false; window.__xrActive = false;
+    rig.position.set(0, 0, 0); rig.rotation.set(0, 0, 0); camera.position.set(0, 0, 0);
+    gate.classList.remove('loading', 'gone'); enterBtn.disabled = false; enterBtn.textContent = enterLabel();
+    xrHud.pauseShow();
+  }
   function xrPressed(pads, i, name, action) {
     const on = pads.some((p) => p.buttons[i] && p.buttons[i].pressed);
     if (on && !xrPose.held[name]) action();
     xrPose.held[name] = on;
   }
   let lastEscape = -1e9, restartAsked = -1e9;
+  const IDLE_PAUSE = 10000, IDLE_MOVE = 0.03, IDLE_TURN = Math.cos(0.035); // ms without moving, walking or pressing; head still within 3 cm and 2°
+  const idlePose = { p: new THREE.Vector3(), d: new THREE.Vector3(0, 0, -1), t: 0 };
   function xrInput(dt, now, session) {
     const pads = [...session.inputSources].map((s) => s.gamepad).filter(Boolean);
+    // nothing happening for a while (headset put down, someone just standing): pause
+    const handsBusy = pads.some((p) => p.buttons.some((b) => b && b.pressed) || p.axes.some((a) => Math.abs(a) > 0.25));
+    const headMoved = viewPos.distanceTo(idlePose.p) > IDLE_MOVE || viewDir.dot(idlePose.d) < IDLE_TURN;
+    if (handsBusy || headMoved) { idlePose.p.copy(viewPos); idlePose.d.copy(viewDir); idlePose.t = now; }
+    if (xrHud.paused) { // the pause: index finger on, B a new visit (with the guide)
+      xrPressed(pads, BTN_TRIGGER, 'take', () => { xrHud.resume(); idlePose.t = now; });
+      xrPressed(pads, BTN_B, 'restart', () => { xrHud.resume(); idlePose.t = now; if (visitor) visitor.reset(); });
+      return;
+    }
+    if (now - idlePose.t > IDLE_PAUSE && !xrHud.guiding && visitor && !visitor.inspecting && !visitor.debug.ended) { xrHud.pauseShow(); return; }
     if (xrHud.guiding) { // the guide; during the visit the side button closes the help again
       xrPressed(pads, BTN_TRIGGER, 'take', () => xrHud.guideNext());
       xrPressed(pads, BTN_GRIP, 'help', () => { if (xrHud.helping) xrHud.guideNext(); });
@@ -2915,7 +2966,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     if (XRSIM) { rig.position.set(cam.x, floorY, cam.z); rig.updateMatrixWorld(true); }
     camera.getWorldPosition(viewPos); camera.getWorldDirection(viewDir);
   }
-  if (XRSIM) addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'i' && !e.repeat) xrHud.toggleInventory(); if (e.key.toLowerCase() === 'h' && !e.repeat) { if (xrHud.helping) xrHud.guideNext(); else if (!xrHud.guiding) xrHud.guideStart(true); } }); // H: the side button
+  if (XRSIM) addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'i' && !e.repeat) xrHud.toggleInventory(); if (e.key.toLowerCase() === 'h' && !e.repeat) { if (xrHud.helping) xrHud.guideNext(); else if (!xrHud.guiding) xrHud.guideStart(true); } if (e.key.toLowerCase() === 'o' && !e.repeat) { if (xrHud.paused) xrHud.resume(); else xrHud.pauseShow(); } }); // H: the side button, O: pause
   if (XRSIM) window.__test = { xrHud, cam, moveBy, shared, get visitor() { return visitor; }, get floorY() { return floorY; } }; // for checking on the Mac only
 
   // ---------- VISITOR MODE: 48 material samples, an inventory, and a site that decays ----------
@@ -3457,7 +3508,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       s.state = 'stored'; got++;
       if (s.atCat) catDissolve();
       idleT = 0; hintLeft = 0;
-      banner(L(`SAMPLE ${s.id} COLLECTED`, `PROBE ${s.id} AUFGENOMMEN`), `${rn(s.room)} / ${sName(s)}`);
+      banner(L(`SAMPLE ${s.id} COLLECTED`, `PROBE ${s.id} AUFGENOMMEN`), `${rn(s.room)} / ${sName(s)}`, false, TAKEN_HOLD);
       const R = ROOMS.find((x) => x.code === s.room), inRoom = R.list.filter((x) => x.state === 'stored').length;
       if (inRoom === R.list.length) banner(rn(s.room), L(`${inRoom} / ${R.list.length} SAMPLES FOUND`, `${inRoom} / ${R.list.length} PROBEN GEFUNDEN`));
       if (got % 5 === 0) banner(L(`${got} SAMPLES CONSERVED`, `${got} PROBEN KONSERVIERT`));
@@ -3479,6 +3530,11 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       addMark(site.x, site.y, site.z, Math.max(partner ? 0.5 : 0, DECAY_STRENGTH + DECAY_STRENGTH_GROW * Math.pow(Math.min(1, got / DECAY_FULL_AT), 1.1)), reach, true);
       if (partner) loseSample(partner);
       if (payer) { hits[payer] = (hits[payer] || 0) + 1; if (hits[payer] >= CLOSE_AFTER) setTimeout(() => closeRoom(payer), 2500); }
+      if (got >= UNDERFOOT_FROM && Math.random() < UNDERFOOT_CHANCE) setTimeout(() => { // the floor before one's feet goes, a few seconds later: one notices
+        if (ended) return; const fl = Math.hypot(viewDir.x, viewDir.z) || 1, a = UNDERFOOT_AHEAD * Math.random();
+        const x = cam.x + viewDir.x / fl * a, z = cam.z + viewDir.z / fl * a;
+        addMark(x, 0, z, 0.32 + 0.1 * Math.min(1, got / 20), 0.9 + Math.random() * 0.5, true); debris(x, 0, z, 0.8, 0.4); say('crumble', 0.55);
+      }, 3000 + Math.random() * 4000);
       debris(site.x, site.y, site.z, reach, 1 + got / 10);
       const dist = Math.hypot(site.x - viewPos.x, site.z - viewPos.z) || 1;
       say('crumble', clamp(1.1 - dist / 22, 0.45, 1), clamp(((site.x - viewPos.x) * -viewDir.z + (site.z - viewPos.z) * viewDir.x) / dist, -0.9, 0.9));
@@ -3487,7 +3543,8 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
     // where a take is paid for: out of sight and out of reach of the visitor, often a door or
     // another sample, so that ways and things go missing in the course of the visit
     const GRACE_TAKES = 3, SPARE_SAMPLES_UNTIL = 6; // nothing elsewhere for the first takes; no other sample hit before this many
-    const DECAY_REACH = 0.9, DECAY_REACH_GROW = 1.9, DECAY_STRENGTH = 0.17, DECAY_STRENGTH_GROW = 0.55, DECAY_FULL_AT = 36, DECAY_EVERYWHERE = 0.12; // a little slower than before (Iris, 08.11.); everywhere only a little: what was entered stays (09.11.)
+    const DECAY_REACH = 0.9, DECAY_REACH_GROW = 2.2, DECAY_STRENGTH = 0.19, DECAY_STRENGTH_GROW = 0.7, DECAY_FULL_AT = 36, DECAY_EVERYWHERE = 0.17; // 13.11.: a touch faster (Iris)
+    const UNDERFOOT_FROM = 4, UNDERFOOT_CHANCE = 0.5, UNDERFOOT_AHEAD = 0.9; // from the 4th take on, often right in front of / under the visitor // a little slower than before (Iris, 08.11.); everywhere only a little: what was entered stays (09.11.)
     const ELSEWHERE_MIN = 4, ELSEWHERE_MAX = 16, ELSEWHERE_TARGET_SHARE = 0.6, ELSEWHERE_TRIES = 40;
     function elsewhere(reach) {
       const flat = Math.hypot(viewDir.x, viewDir.z) || 1, fx = viewDir.x / flat, fz = viewDir.z / flat;
@@ -3943,7 +4000,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       const KEY = 'visitorMode.sessions';
       let all = []; try { all = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (err) {}
       const num = (all.length ? all[all.length - 1].n : 0) + 1;
-      const me = { n: num, name: visitorName || `VISITOR ${String(num).padStart(3, '0')}`, got, rem: Math.round(remaining * 100), ids: samples.filter((s) => s.state === 'stored').map((s) => s.id) };
+      const me = { n: num, name: `VISITOR ${String(num).padStart(3, '0')}` /* no name asked for: everyone is a number (13.11.) */, got, rem: Math.round(remaining * 100), ids: samples.filter((s) => s.state === 'stored').map((s) => s.id) };
       all.push(me); try { localStorage.setItem(KEY, JSON.stringify(all.slice(-200))); } catch (err) {}
       const seen = new Set(all.flatMap((x) => x.ids || []));
       // the register: whoever left most of the site first; with as much left, fewer samples first
@@ -3991,6 +4048,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
       shared.uSpotOn.value = 1; applyBeamSize(); visitorName = '';
       placeStart(); xrPose.frames = 0; rig.rotation.y = XRSIM ? 0 : -cam.yaw;
       inventorySeen = shared.uTime.value;
+      if (xrActive) xrHud.guideStart(); // a new visitor: first the guide again (13.11.)
     }
 
     // --- the detector: a crackle that gets denser close to a sample ---
@@ -4020,7 +4078,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           shared.uMarkN.value = n; shared.uDecay.value = replay.decay * replay.k;
         } else {
           for (const m of marks) {
-            if (m.take) m.rTo = Math.min(3.2, m.rTo + dt * 0.00035 * got); // ~0.3 m a minute after 14 samples
+            if (m.take) m.rTo = Math.min(3.4, m.rTo + dt * 0.00048 * got); // ~0.3 m a minute after 14 samples
             m.r += (m.rTo - m.r) * Math.min(1, dt * 0.35);
             shared.uMark.value[n].set(m.x, m.y, m.z, m.s); shared.uMarkR.value[n] = m.r; n++;
           }
@@ -4046,7 +4104,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
         if (insp.s && insp.pour >= 0) {
           insp.pour += dt / 1.8;
           resinTo(-insp.hB / 2 + (insp.hB + 0.0002) * Math.min(1, insp.pour));
-          if (insp.pour >= 1 && insp.mode === 'take') { insp.mode = 'done'; $('#iCond').textContent = L('CONSERVED IN RESIN', 'IN HARZ KONSERVIERT'); const s = insp.s; setTimeout(() => { closeInspect(); store(s); }, 900); }
+          if (insp.pour >= 1 && insp.mode === 'take') { insp.mode = 'done'; $('#iCond').textContent = L('CONSERVED IN RESIN', 'IN HARZ KONSERVIERT'); const s = insp.s; setTimeout(() => { closeInspect(); store(s); }, INSPECT_HOLD); }
         }
         if (insp.s && xrActive && insp.obj && insp.pour < 0) insp.obj.rotation.y += dt * 0.35;
         if (insp.s && insp.r) {
@@ -4057,7 +4115,7 @@ C75yHLX7CaDLEtCjZwOOCYLKBz9qAkMLFso1KmWoQIOEJNBIK5le4p+Nt2LhnfwX1UHJM5u8LcnOvt12
           releaseKeys();
         }
         lightTick(dt); fallTick(dt);
-        const guiding = xrActive && xrHud.guiding; // the visit starts after the guide
+        const guiding = (xrActive || xrOK) && (xrHud.guiding || xrHud.paused || !xrActive); // the visit starts after the guide, and waits during a pause or outside VR
         if (entered && !ended && !guiding) {
           if (!introDone && !xrActive) { // on a screen, in VR the guide says it
             introDone = true;
